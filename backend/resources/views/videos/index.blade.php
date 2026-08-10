@@ -23,9 +23,7 @@
 
         body {
             margin: 0;
-            padding: 0;
-
-            background: #111;
+            background: #0d0d0d;
             color: #fff;
 
             font-family:
@@ -34,30 +32,155 @@
                 sans-serif;
         }
 
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .site-header {
+            background: #111;
+            border-bottom: 1px solid #222;
+        }
+
+        .header-inner {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 16px 30px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .logo span {
+            color: #888;
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 18px;
+
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .main-nav a:hover {
+            color: #fff;
+        }
+
         .page {
             max-width: 1500px;
             margin: 0 auto;
             padding: 30px;
         }
 
-        .header {
+        .page-heading {
             display: flex;
             justify-content: space-between;
             align-items: center;
 
+            gap: 20px;
+
             margin-bottom: 20px;
         }
 
-        .header h1 {
+        .page-heading h1 {
             margin: 0;
 
             font-size: 28px;
-            font-weight: 700;
         }
 
         .video-count {
-            color: #888;
+            color: #777;
             font-size: 13px;
+        }
+
+        .toolbar {
+            margin-bottom: 22px;
+
+            padding: 14px;
+
+            border: 1px solid #252525;
+            border-radius: 9px;
+
+            background: #151515;
+
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+
+            min-width: 0;
+
+            height: 42px;
+
+            padding: 0 13px;
+
+            border: 1px solid #333;
+            border-radius: 6px;
+
+            background: #0e0e0e;
+            color: #fff;
+
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #666;
+        }
+
+        .sort-select {
+            height: 42px;
+
+            padding: 0 35px 0 12px;
+
+            border: 1px solid #333;
+            border-radius: 6px;
+
+            background: #0e0e0e;
+            color: #fff;
+
+            outline: none;
+        }
+
+        .search-button {
+            height: 42px;
+
+            padding: 0 18px;
+
+            border: 0;
+            border-radius: 6px;
+
+            background: #fff;
+            color: #111;
+
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .clear-button {
+            height: 42px;
+
+            padding: 0 15px;
+
+            border-radius: 6px;
+
+            background: #282828;
+            color: #ddd;
+
+            display: inline-flex;
+            align-items: center;
         }
 
         .category-nav {
@@ -66,50 +189,51 @@
 
             gap: 10px;
 
-            margin-bottom: 30px;
+            margin-bottom: 28px;
         }
 
         .category-link {
-            display: inline-flex;
-
-            align-items: center;
-
             padding: 8px 14px;
 
             border-radius: 999px;
 
-            background: #222;
-
-            color: #bbb;
-
-            text-decoration: none;
+            background: #202020;
+            color: #aaa;
 
             font-size: 13px;
-
-            transition:
-                background 0.2s ease,
-                color 0.2s ease;
         }
 
         .category-link:hover {
-            background: #333;
+            background: #303030;
             color: #fff;
         }
 
         .category-link.active {
             background: #fff;
             color: #111;
+
             font-weight: 700;
         }
 
         .category-description {
-            margin-top: -15px;
-            margin-bottom: 28px;
+            margin:
+                -12px 0 28px;
 
-            color: #999;
+            color: #888;
 
             font-size: 14px;
             line-height: 1.6;
+        }
+
+        .result-info {
+            margin-bottom: 18px;
+
+            color: #888;
+            font-size: 13px;
+        }
+
+        .result-info strong {
+            color: #ddd;
         }
 
         .video-grid {
@@ -125,18 +249,10 @@
             min-width: 0;
         }
 
-        .video-link {
-            display: block;
-
-            color: inherit;
-            text-decoration: none;
-        }
-
         .thumbnail {
             position: relative;
 
             width: 100%;
-
             aspect-ratio: 16 / 9;
 
             background: #222;
@@ -151,7 +267,6 @@
             height: 100%;
 
             display: block;
-
             object-fit: cover;
 
             transition:
@@ -169,7 +284,6 @@
             height: 100%;
 
             display: flex;
-
             align-items: center;
             justify-content: center;
 
@@ -181,7 +295,6 @@
                 );
 
             color: #777;
-
             font-size: 14px;
         }
 
@@ -197,34 +310,18 @@
             width: 56px;
             height: 56px;
 
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
             border-radius: 50%;
 
             background:
                 rgba(0, 0, 0, 0.72);
 
-            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
             font-size: 22px;
 
-            transition:
-                transform 0.2s ease,
-                background 0.2s ease;
-
             pointer-events: none;
-        }
-
-        .video-card:hover .play-button {
-            transform:
-                translate(-50%, -50%)
-                scale(1.08);
-
-            background:
-                rgba(0, 0, 0, 0.85);
         }
 
         .duration {
@@ -235,15 +332,12 @@
 
             padding: 4px 7px;
 
+            border-radius: 4px;
+
             background:
                 rgba(0, 0, 0, 0.82);
 
-            border-radius: 4px;
-
-            color: #fff;
-
             font-size: 12px;
-
             font-weight: 600;
         }
 
@@ -260,12 +354,10 @@
         .badge {
             padding: 4px 6px;
 
-            background:
-                rgba(0, 0, 0, 0.82);
-
             border-radius: 4px;
 
-            color: #fff;
+            background:
+                rgba(0, 0, 0, 0.82);
 
             font-size: 11px;
             font-weight: 700;
@@ -277,8 +369,6 @@
             margin-top: 10px;
 
             color: #fff;
-
-            text-decoration: none;
 
             font-size: 15px;
             font-weight: 600;
@@ -298,27 +388,25 @@
         .meta {
             margin-top: 7px;
 
-            color: #888;
-
+            color: #777;
             font-size: 12px;
-        }
-
-        .category-name {
-            color: #aaa;
         }
 
         .pagination {
             margin-top: 40px;
         }
 
-        .pagination nav {
-            display: flex;
-            justify-content: center;
-        }
-
         .empty-state {
+            padding: 35px;
+
+            border: 1px solid #252525;
+            border-radius: 9px;
+
+            background: #151515;
+
             color: #888;
-            font-size: 14px;
+
+            grid-column: 1 / -1;
         }
 
         @media (max-width: 1100px) {
@@ -332,30 +420,45 @@
 
         @media (max-width: 750px) {
 
+            .header-inner,
+            .page {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
             .video-grid {
                 grid-template-columns:
                     repeat(2, minmax(0, 1fr));
             }
 
-            .page {
-                padding: 18px;
+            .toolbar {
+                flex-wrap: wrap;
             }
 
-            .header {
-                align-items: flex-start;
-                gap: 12px;
+            .search-input {
+                flex-basis: 100%;
             }
 
-            .header h1 {
-                font-size: 24px;
+            .sort-select {
+                flex: 1;
             }
 
         }
 
         @media (max-width: 500px) {
 
-            .video-grid {
-                grid-template-columns: 1fr;
+            .main-nav {
+                display: none;
+            }
+
+            .toolbar {
+                align-items: stretch;
+            }
+
+            .sort-select,
+            .search-button,
+            .clear-button {
+                width: 100%;
             }
 
         }
@@ -366,9 +469,39 @@
 
 <body>
 
-<div class="page">
 
-    <div class="header">
+<header class="site-header">
+
+    <div class="header-inner">
+
+        <a
+            class="logo"
+            href="{{ route('home') }}"
+        >
+            PROJECT <span>ARES</span>
+        </a>
+
+
+        <nav class="main-nav">
+
+            <a href="{{ route('home') }}">
+                Home
+            </a>
+
+            <a href="{{ route('videos.index') }}">
+                Videos
+            </a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+
+<main class="page">
+
+    <div class="page-heading">
 
         <h1>
 
@@ -387,7 +520,7 @@
 
         <div class="video-count">
 
-            {{ $videos->total() }}
+            {{ number_format($videos->total()) }}
             videos
 
         </div>
@@ -395,11 +528,89 @@
     </div>
 
 
+    <form
+        class="toolbar"
+        method="GET"
+        action="{{ $activeCategory
+            ? route('videos.category', $activeCategory->slug)
+            : route('videos.index') }}"
+    >
+
+        <input
+            class="search-input"
+            type="search"
+            name="q"
+            value="{{ $search }}"
+            placeholder="Search videos..."
+        >
+
+
+        <select
+            class="sort-select"
+            name="sort"
+        >
+
+            <option
+                value="latest"
+                @selected($sort === 'latest')
+            >
+                Latest
+            </option>
+
+            <option
+                value="views"
+                @selected($sort === 'views')
+            >
+                Most Viewed
+            </option>
+
+            <option
+                value="oldest"
+                @selected($sort === 'oldest')
+            >
+                Oldest
+            </option>
+
+        </select>
+
+
+        <button
+            class="search-button"
+            type="submit"
+        >
+            Search
+        </button>
+
+
+        @if($search !== '' || $sort !== 'latest')
+
+            <a
+                class="clear-button"
+                href="{{ $activeCategory
+                    ? route('videos.category', $activeCategory->slug)
+                    : route('videos.index') }}"
+            >
+                Clear
+            </a>
+
+        @endif
+
+    </form>
+
+
     <nav class="category-nav">
 
         <a
             class="category-link {{ $activeCategory === null ? 'active' : '' }}"
-            href="{{ route('videos.index') }}"
+            href="{{ route(
+                'videos.index',
+                array_filter([
+                    'q' => $search,
+                    'sort' => $sort !== 'latest'
+                        ? $sort
+                        : null,
+                ])
+            ) }}"
         >
             All Videos
         </a>
@@ -409,7 +620,16 @@
 
             <a
                 class="category-link {{ $activeCategory?->id === $category->id ? 'active' : '' }}"
-                href="{{ route('videos.category', $category->slug) }}"
+                href="{{ route(
+                    'videos.category',
+                    array_filter([
+                        'slug' => $category->slug,
+                        'q' => $search,
+                        'sort' => $sort !== 'latest'
+                            ? $sort
+                            : null,
+                    ])
+                ) }}"
             >
                 {{ $category->name }}
             </a>
@@ -430,6 +650,21 @@
     @endif
 
 
+    @if($search !== '')
+
+        <div class="result-info">
+
+            Search results for:
+
+            <strong>
+                "{{ $search }}"
+            </strong>
+
+        </div>
+
+    @endif
+
+
     <div class="video-grid">
 
         @forelse($videos as $video)
@@ -437,7 +672,6 @@
             <article class="video-card">
 
                 <a
-                    class="video-link"
                     href="{{ route('videos.show', $video->slug) }}"
                 >
 
@@ -512,9 +746,11 @@
                     {{ number_format($video->views) }}
                     views
 
+
                     @if($video->video_source)
 
                         &middot;
+
                         {{ $video->video_source }}
 
                     @endif
@@ -524,9 +760,7 @@
 
                         &middot;
 
-                        <span class="category-name">
-                            {{ $video->category->name }}
-                        </span>
+                        {{ $video->category->name }}
 
                     @endif
 
@@ -537,7 +771,15 @@
         @empty
 
             <div class="empty-state">
-                No videos found in this category.
+
+                No videos found.
+
+                @if($search !== '')
+
+                    Try a different search term.
+
+                @endif
+
             </div>
 
         @endforelse
@@ -555,7 +797,7 @@
 
     @endif
 
-</div>
+</main>
 
 </body>
 

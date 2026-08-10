@@ -20,6 +20,7 @@
 
         body {
             margin: 0;
+
             background: #0d0d0d;
             color: #fff;
 
@@ -36,7 +37,9 @@
 
         .site-header {
             position: sticky;
+
             top: 0;
+
             z-index: 100;
 
             background:
@@ -48,32 +51,84 @@
 
         .header-inner {
             max-width: 1500px;
+
             margin: 0 auto;
 
-            padding: 16px 30px;
+            padding: 14px 30px;
 
             display: flex;
-            justify-content: space-between;
+
             align-items: center;
 
             gap: 25px;
         }
 
         .logo {
-            font-size: 24px;
+            flex-shrink: 0;
+
+            font-size: 22px;
             font-weight: 800;
+
             letter-spacing: 1px;
         }
 
         .logo span {
-            color: #999;
+            color: #888;
+        }
+
+        .header-search {
+            flex: 1;
+
+            max-width: 620px;
+
+            display: flex;
+        }
+
+        .header-search input {
+            width: 100%;
+
+            height: 40px;
+
+            padding: 0 13px;
+
+            border:
+                1px solid #333;
+
+            border-radius:
+                6px 0 0 6px;
+
+            background: #151515;
+            color: #fff;
+
+            outline: none;
+        }
+
+        .header-search button {
+            height: 40px;
+
+            padding: 0 17px;
+
+            border: 0;
+
+            border-radius:
+                0 6px 6px 0;
+
+            background: #fff;
+            color: #111;
+
+            font-weight: 700;
+
+            cursor: pointer;
         }
 
         .main-nav {
+            margin-left: auto;
+
             display: flex;
+
             align-items: center;
 
-            gap: 20px;
+            gap: 18px;
 
             color: #aaa;
 
@@ -97,6 +152,9 @@
 
             padding: 40px;
 
+            border:
+                1px solid #242424;
+
             border-radius: 14px;
 
             background:
@@ -105,15 +163,14 @@
                     #1c1c1c,
                     #111
                 );
-
-            border:
-                1px solid #242424;
         }
 
         .hero h1 {
-            margin: 0 0 12px;
+            margin:
+                0 0 12px;
 
             font-size: 38px;
+
             line-height: 1.15;
         }
 
@@ -125,6 +182,7 @@
             color: #999;
 
             font-size: 15px;
+
             line-height: 1.7;
         }
 
@@ -132,16 +190,12 @@
             margin-top: 24px;
 
             display: flex;
-            gap: 12px;
             flex-wrap: wrap;
+
+            gap: 12px;
         }
 
         .button {
-            display: inline-flex;
-
-            align-items: center;
-            justify-content: center;
-
             padding: 10px 18px;
 
             border-radius: 6px;
@@ -221,7 +275,6 @@
             height: 100%;
 
             display: block;
-
             object-fit: cover;
 
             transition:
@@ -270,7 +323,6 @@
             border-radius: 50%;
 
             display: flex;
-
             align-items: center;
             justify-content: center;
 
@@ -397,6 +449,7 @@
 
         .empty-state {
             color: #777;
+
             font-size: 14px;
         }
 
@@ -429,6 +482,16 @@
             .header-inner {
                 padding:
                     14px 18px;
+
+                flex-wrap: wrap;
+            }
+
+            .header-search {
+                order: 3;
+
+                flex-basis: 100%;
+
+                max-width: none;
             }
 
             .page {
@@ -449,10 +512,6 @@
                     repeat(2, minmax(0, 1fr));
             }
 
-            .main-nav {
-                gap: 12px;
-            }
-
         }
 
         @media (max-width: 500px) {
@@ -461,17 +520,8 @@
                 display: none;
             }
 
-            .video-grid {
-                grid-template-columns:
-                    repeat(2, minmax(0, 1fr));
-            }
-
             .category-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .hero {
-                margin-bottom: 30px;
             }
 
         }
@@ -481,6 +531,7 @@
 </head>
 
 <body>
+
 
 <header class="site-header">
 
@@ -492,6 +543,25 @@
         >
             PROJECT <span>ARES</span>
         </a>
+
+
+        <form
+            class="header-search"
+            method="GET"
+            action="{{ route('videos.index') }}"
+        >
+
+            <input
+                type="search"
+                name="q"
+                placeholder="Search videos..."
+            >
+
+            <button type="submit">
+                Search
+            </button>
+
+        </form>
 
 
         <nav class="main-nav">
@@ -525,6 +595,7 @@
             external video sources.
         </p>
 
+
         <div class="hero-actions">
 
             <a
@@ -534,11 +605,15 @@
                 Browse Videos
             </a>
 
+
             @if($categories->isNotEmpty())
 
                 <a
                     class="button secondary"
-                    href="{{ route('videos.category', $categories->first()->slug) }}"
+                    href="{{ route(
+                        'videos.category',
+                        $categories->first()->slug
+                    ) }}"
                 >
                     Browse Categories
                 </a>
@@ -560,9 +635,11 @@
 
             <a
                 class="view-all"
-                href="{{ route('videos.index') }}"
+                href="{{ route('videos.index', [
+                    'sort' => 'views'
+                ]) }}"
             >
-                View all
+                View popular videos
             </a>
 
         </div>
@@ -678,6 +755,7 @@
             <h2 class="section-title">
                 Latest Videos
             </h2>
+
 
             <a
                 class="view-all"
@@ -809,7 +887,10 @@
 
                 <a
                     class="category-card"
-                    href="{{ route('videos.category', $category->slug) }}"
+                    href="{{ route(
+                        'videos.category',
+                        $category->slug
+                    ) }}"
                 >
 
                     <div class="category-name">
