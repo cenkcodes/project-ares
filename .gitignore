@@ -6,3 +6,4 @@ storage/
 bootstrap/cache/
 .idea/
 .vscode/settings.json
+tmp/
