@@ -11,6 +11,9 @@ Route::get('/', function () {
 Route::get('/videos', [VideoController::class, 'index'])
     ->name('videos.index');
 
+Route::get('/categories/{slug}', [VideoController::class, 'category'])
+    ->name('videos.category');
+
 Route::get('/videos/{slug}', [VideoController::class, 'show'])
     ->name('videos.show');
 

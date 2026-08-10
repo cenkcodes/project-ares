@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
     <meta charset="UTF-8">
@@ -9,7 +10,10 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Videos | Project Ares</title>
+    <title>
+        {{ $activeCategory ? $activeCategory->name . ' Videos' : 'Videos' }}
+        | Project Ares
+    </title>
 
     <style>
 
@@ -33,17 +37,15 @@
         .page {
             max-width: 1500px;
             margin: 0 auto;
-
             padding: 30px;
         }
 
         .header {
             display: flex;
-
             justify-content: space-between;
             align-items: center;
 
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .header h1 {
@@ -55,8 +57,59 @@
 
         .video-count {
             color: #888;
+            font-size: 13px;
+        }
+
+        .category-nav {
+            display: flex;
+            flex-wrap: wrap;
+
+            gap: 10px;
+
+            margin-bottom: 30px;
+        }
+
+        .category-link {
+            display: inline-flex;
+
+            align-items: center;
+
+            padding: 8px 14px;
+
+            border-radius: 999px;
+
+            background: #222;
+
+            color: #bbb;
+
+            text-decoration: none;
 
             font-size: 13px;
+
+            transition:
+                background 0.2s ease,
+                color 0.2s ease;
+        }
+
+        .category-link:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .category-link.active {
+            background: #fff;
+            color: #111;
+            font-weight: 700;
+        }
+
+        .category-description {
+            margin-top: -15px;
+            margin-bottom: 28px;
+
+            color: #999;
+
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         .video-grid {
@@ -108,7 +161,6 @@
 
         .video-card:hover .thumbnail img {
             transform: scale(1.04);
-
             opacity: 0.88;
         }
 
@@ -202,7 +254,6 @@
             bottom: 8px;
 
             display: flex;
-
             gap: 5px;
         }
 
@@ -217,7 +268,6 @@
             color: #fff;
 
             font-size: 11px;
-
             font-weight: 700;
         }
 
@@ -231,7 +281,6 @@
             text-decoration: none;
 
             font-size: 15px;
-
             font-weight: 600;
 
             line-height: 1.4;
@@ -254,14 +303,22 @@
             font-size: 12px;
         }
 
+        .category-name {
+            color: #aaa;
+        }
+
         .pagination {
             margin-top: 40px;
         }
 
         .pagination nav {
             display: flex;
-
             justify-content: center;
+        }
+
+        .empty-state {
+            color: #888;
+            font-size: 14px;
         }
 
         @media (max-width: 1100px) {
@@ -282,6 +339,11 @@
 
             .page {
                 padding: 18px;
+            }
+
+            .header {
+                align-items: flex-start;
+                gap: 12px;
             }
 
             .header h1 {
@@ -309,8 +371,19 @@
     <div class="header">
 
         <h1>
-            Videos
+
+            @if($activeCategory)
+
+                {{ $activeCategory->name }}
+
+            @else
+
+                Videos
+
+            @endif
+
         </h1>
+
 
         <div class="video-count">
 
@@ -320,6 +393,41 @@
         </div>
 
     </div>
+
+
+    <nav class="category-nav">
+
+        <a
+            class="category-link {{ $activeCategory === null ? 'active' : '' }}"
+            href="{{ route('videos.index') }}"
+        >
+            All Videos
+        </a>
+
+
+        @foreach($categories as $category)
+
+            <a
+                class="category-link {{ $activeCategory?->id === $category->id ? 'active' : '' }}"
+                href="{{ route('videos.category', $category->slug) }}"
+            >
+                {{ $category->name }}
+            </a>
+
+        @endforeach
+
+    </nav>
+
+
+    @if($activeCategory && $activeCategory->description)
+
+        <div class="category-description">
+
+            {{ $activeCategory->description }}
+
+        </div>
+
+    @endif
 
 
     <div class="video-grid">
@@ -395,9 +503,7 @@
                     class="title"
                     href="{{ route('videos.show', $video->slug) }}"
                 >
-
                     {{ $video->title }}
-
                 </a>
 
 
@@ -413,15 +519,26 @@
 
                     @endif
 
+
+                    @if($video->category)
+
+                        &middot;
+
+                        <span class="category-name">
+                            {{ $video->category->name }}
+                        </span>
+
+                    @endif
+
                 </div>
 
             </article>
 
         @empty
 
-            <p>
-                No videos found.
-            </p>
+            <div class="empty-state">
+                No videos found in this category.
+            </div>
 
         @endforelse
 
@@ -441,4 +558,5 @@
 </div>
 
 </body>
+
 </html>
