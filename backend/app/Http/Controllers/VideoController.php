@@ -23,8 +23,10 @@ class VideoController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
+        $video->increment('views');
+
         return view('videos.show', [
-            'video' => $video,
+            'video' => $video->fresh(),
         ]);
     }
 }
