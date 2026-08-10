@@ -22,13 +22,63 @@
             margin: 0;
             padding: 0;
 
-            background: #111;
+            background: #0d0d0d;
             color: #fff;
 
             font-family:
                 Arial,
                 Helvetica,
                 sans-serif;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .site-header {
+            background: #111;
+
+            border-bottom:
+                1px solid #222;
+        }
+
+        .header-inner {
+            max-width: 1500px;
+
+            margin: 0 auto;
+
+            padding: 16px 30px;
+
+            display: flex;
+
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .logo span {
+            color: #888;
+        }
+
+        .main-nav {
+            display: flex;
+
+            gap: 18px;
+
+            color: #aaa;
+
+            font-size: 14px;
+        }
+
+        .main-nav a:hover {
+            color: #fff;
         }
 
         .page {
@@ -45,8 +95,6 @@
             margin-bottom: 20px;
 
             color: #aaa;
-
-            text-decoration: none;
 
             font-size: 14px;
         }
@@ -79,7 +127,8 @@
         }
 
         .video-info {
-            padding: 22px 0 0;
+            padding:
+                22px 0 0;
         }
 
         .title {
@@ -108,14 +157,6 @@
             font-size: 13px;
         }
 
-        .meta-item {
-            display: inline-flex;
-
-            align-items: center;
-
-            gap: 5px;
-        }
-
         .separator {
             color: #555;
         }
@@ -136,12 +177,21 @@
             font-weight: 700;
         }
 
+        .category-link {
+            color: #bbb;
+        }
+
+        .category-link:hover {
+            color: #fff;
+        }
+
         .description {
             margin-top: 22px;
 
             padding-top: 20px;
 
-            border-top: 1px solid #292929;
+            border-top:
+                1px solid #292929;
 
             color: #ccc;
 
@@ -158,10 +208,217 @@
             font-size: 12px;
         }
 
+        .related-section {
+            margin-top: 50px;
+
+            padding-top: 30px;
+
+            border-top:
+                1px solid #222;
+        }
+
+        .related-header {
+            display: flex;
+
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 20px;
+
+            margin-bottom: 20px;
+        }
+
+        .related-title {
+            margin: 0;
+
+            font-size: 22px;
+        }
+
+        .related-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 20px;
+        }
+
+        .video-card {
+            min-width: 0;
+        }
+
+        .thumbnail {
+            position: relative;
+
+            width: 100%;
+
+            aspect-ratio: 16 / 9;
+
+            background: #222;
+
+            border-radius: 8px;
+
+            overflow: hidden;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+
+            display: block;
+
+            object-fit: cover;
+
+            transition:
+                transform 0.25s ease,
+                opacity 0.25s ease;
+        }
+
+        .video-card:hover .thumbnail img {
+            transform: scale(1.04);
+
+            opacity: 0.88;
+        }
+
+        .thumbnail-placeholder {
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #222,
+                    #333
+                );
+
+            color: #777;
+
+            font-size: 13px;
+        }
+
+        .play-button {
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            width: 48px;
+            height: 48px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            background:
+                rgba(0, 0, 0, 0.72);
+
+            font-size: 18px;
+
+            pointer-events: none;
+        }
+
+        .duration {
+            position: absolute;
+
+            right: 7px;
+            bottom: 7px;
+
+            padding: 4px 6px;
+
+            border-radius: 4px;
+
+            background:
+                rgba(0, 0, 0, 0.82);
+
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badges {
+            position: absolute;
+
+            left: 7px;
+            bottom: 7px;
+
+            display: flex;
+
+            gap: 5px;
+        }
+
+        .card-badge {
+            padding: 4px 6px;
+
+            border-radius: 4px;
+
+            background:
+                rgba(0, 0, 0, 0.82);
+
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .video-card-title {
+            display: -webkit-box;
+
+            margin-top: 9px;
+
+            color: #fff;
+
+            font-size: 14px;
+            font-weight: 600;
+
+            line-height: 1.4;
+
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+
+            overflow: hidden;
+        }
+
+        .video-card-title:hover {
+            color: #ccc;
+        }
+
+        .video-card-meta {
+            margin-top: 6px;
+
+            color: #777;
+
+            font-size: 11px;
+        }
+
+        .empty-state {
+            color: #777;
+
+            font-size: 14px;
+        }
+
+        @media (max-width: 1000px) {
+
+            .related-grid {
+                grid-template-columns:
+                    repeat(3, minmax(0, 1fr));
+            }
+
+        }
+
         @media (max-width: 700px) {
 
+            .header-inner,
             .page {
-                padding: 18px;
+                padding-left: 18px;
+                padding-right: 18px;
             }
 
             .title {
@@ -172,6 +429,19 @@
                 border-radius: 6px;
             }
 
+            .related-grid {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+        }
+
+        @media (max-width: 500px) {
+
+            .main-nav {
+                display: none;
+            }
+
         }
 
     </style>
@@ -180,7 +450,37 @@
 
 <body>
 
-<div class="page">
+
+<header class="site-header">
+
+    <div class="header-inner">
+
+        <a
+            class="logo"
+            href="{{ route('home') }}"
+        >
+            PROJECT <span>ARES</span>
+        </a>
+
+
+        <nav class="main-nav">
+
+            <a href="{{ route('home') }}">
+                Home
+            </a>
+
+            <a href="{{ route('videos.index') }}">
+                Videos
+            </a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+
+<main class="page">
 
     <a
         class="back-link"
@@ -212,12 +512,9 @@
 
         <div class="meta">
 
-            <span class="meta-item">
-
+            <span>
                 {{ number_format($video->views) }}
-
                 views
-
             </span>
 
 
@@ -227,10 +524,8 @@
                     &middot;
                 </span>
 
-                <span class="meta-item">
-
+                <span>
                     {{ $video->video_source }}
-
                 </span>
 
             @endif
@@ -242,11 +537,28 @@
                     &middot;
                 </span>
 
-                <span class="meta-item">
-
+                <span>
                     {{ gmdate('H:i:s', $video->duration) }}
-
                 </span>
+
+            @endif
+
+
+            @if($video->category)
+
+                <span class="separator">
+                    &middot;
+                </span>
+
+                <a
+                    class="category-link"
+                    href="{{ route(
+                        'videos.category',
+                        $video->category->slug
+                    ) }}"
+                >
+                    {{ $video->category->name }}
+                </a>
 
             @endif
 
@@ -292,7 +604,150 @@
 
     </div>
 
-</div>
+
+    <section class="related-section">
+
+        <div class="related-header">
+
+            <h2 class="related-title">
+                Related Videos
+            </h2>
+
+            @if($video->category)
+
+                <a
+                    class="category-link"
+                    href="{{ route(
+                        'videos.category',
+                        $video->category->slug
+                    ) }}"
+                >
+                    View {{ $video->category->name }}
+                </a>
+
+            @endif
+
+        </div>
+
+
+        <div class="related-grid">
+
+            @forelse($relatedVideos as $relatedVideo)
+
+                <article class="video-card">
+
+                    <a
+                        href="{{ route(
+                            'videos.show',
+                            $relatedVideo->slug
+                        ) }}"
+                    >
+
+                        <div class="thumbnail">
+
+                            @if($relatedVideo->thumbnail)
+
+                                <img
+                                    src="{{ $relatedVideo->thumbnail }}"
+                                    alt="{{ $relatedVideo->title }}"
+                                    loading="lazy"
+                                >
+
+                            @else
+
+                                <div class="thumbnail-placeholder">
+                                    No thumbnail
+                                </div>
+
+                            @endif
+
+
+                            <div class="play-button">
+                                &#9654;
+                            </div>
+
+
+                            @if($relatedVideo->duration)
+
+                                <div class="duration">
+
+                                    {{ gmdate(
+                                        'H:i:s',
+                                        $relatedVideo->duration
+                                    ) }}
+
+                                </div>
+
+                            @endif
+
+
+                            <div class="badges">
+
+                                @if($relatedVideo->is_4k)
+
+                                    <span class="card-badge">
+                                        4K
+                                    </span>
+
+                                @elseif($relatedVideo->is_hd)
+
+                                    <span class="card-badge">
+                                        HD
+                                    </span>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                    </a>
+
+
+                    <a
+                        class="video-card-title"
+                        href="{{ route(
+                            'videos.show',
+                            $relatedVideo->slug
+                        ) }}"
+                    >
+                        {{ $relatedVideo->title }}
+                    </a>
+
+
+                    <div class="video-card-meta">
+
+                        {{ number_format(
+                            $relatedVideo->views
+                        ) }}
+                        views
+
+
+                        @if($relatedVideo->category)
+
+                            &middot;
+
+                            {{ $relatedVideo->category->name }}
+
+                        @endif
+
+                    </div>
+
+                </article>
+
+            @empty
+
+                <div class="empty-state">
+                    No related videos available.
+                </div>
+
+            @endforelse
+
+        </div>
+
+    </section>
+
+</main>
 
 </body>
 

@@ -63,8 +63,13 @@ class VideoController extends Controller
 
         $video->increment('views');
 
+        $video = $video->fresh('category');
+
+        $relatedVideos = $this->getRelatedVideos($video);
+
         return view('videos.show', [
-            'video' => $video->fresh('category'),
+            'video' => $video,
+            'relatedVideos' => $relatedVideos,
         ]);
     }
 
@@ -120,5 +125,36 @@ class VideoController extends Controller
         };
 
         return $query;
+    }
+
+    private function getRelatedVideos(Video $video)
+    {
+        $query = Video::with('category')
+            ->where('is_active', true)
+            ->where('id', '!=', $video->id);
+
+        if ($video->category_id !== null) {
+            $query->where(
+                'category_id',
+                $video->category_id
+            );
+        }
+
+        $relatedVideos = $query
+            ->orderByDesc('views')
+            ->latest()
+            ->take(8)
+            ->get();
+
+        if ($relatedVideos->isEmpty()) {
+            $relatedVideos = Video::with('category')
+                ->where('is_active', true)
+                ->where('id', '!=', $video->id)
+                ->latest()
+                ->take(8)
+                ->get();
+        }
+
+        return $relatedVideos;
     }
 }
