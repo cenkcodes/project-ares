@@ -7,6 +7,7 @@ use App\Filament\Resources\Videos\VideoResource;
 use Filament\Actions\CreateAction;
 use Filament\Actions\ImportAction;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Validation\Rules\File;
 
 class ListVideos extends ListRecords
 {
@@ -19,8 +20,15 @@ class ListVideos extends ListRecords
             ImportAction::make('importVideos')
                 ->label('Import Videos')
                 ->importer(VideoImporter::class)
+                ->fileRules([
+                    File::types([
+                        'csv',
+                        'txt',
+                    ])->max('5mb'),
+                ])
                 ->maxRows(5000)
-                ->chunkSize(100),
+                ->chunkSize(100)
+                ->csvDelimiter(','),
 
             CreateAction::make(),
         ];
