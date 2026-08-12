@@ -3,6 +3,82 @@
 
 <head>
 
+    @php
+        $pageNumber = $videos->currentPage();
+
+        $hasSeoFilters =
+            $search !== '' ||
+            $sort !== 'latest';
+
+        if ($search !== '') {
+            $pageTitle =
+                'Search: ' .
+                $search .
+                ' | Project Ares';
+        } elseif ($activeCategory) {
+            $pageTitle =
+                $activeCategory->name .
+                ' Videos | Project Ares';
+        } else {
+            $pageTitle =
+                'Videos | Project Ares';
+        }
+
+        if ($activeCategory) {
+            $pageDescription =
+                $activeCategory->description
+                    ?: 'Browse ' .
+                        $activeCategory->name .
+                        ' videos on Project Ares.';
+        } else {
+            $pageDescription =
+                'Browse videos on Project Ares. Search, sort and explore available video categories.';
+        }
+
+        $canonicalParameters = [];
+
+        if (
+            ! $hasSeoFilters &&
+            $pageNumber > 1
+        ) {
+            $canonicalParameters['page'] =
+                $pageNumber;
+        }
+
+        if ($activeCategory) {
+            $canonicalUrl = route(
+                'videos.category',
+                array_merge(
+                    [
+                        'slug' =>
+                            $activeCategory->slug,
+                    ],
+                    $canonicalParameters
+                )
+            );
+        } else {
+            $canonicalUrl = route(
+                'videos.index',
+                $canonicalParameters
+            );
+        }
+
+        if (! app()->environment('production')) {
+            $robotsContent =
+                'noindex,nofollow';
+        } elseif ($hasSeoFilters) {
+            $robotsContent =
+                'noindex,follow';
+        } else {
+            $robotsContent =
+                'index,follow';
+        }
+
+        $ogImage =
+            $videos->first()?->thumbnail
+            ?: asset('images/og-default.jpg');
+    @endphp
+
     <meta charset="UTF-8">
 
     <meta
@@ -10,10 +86,77 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>
-        {{ $activeCategory ? $activeCategory->name . ' Videos' : 'Videos' }}
-        | Project Ares
-    </title>
+    <title>{{ $pageTitle }}</title>
+
+    <meta
+        name="description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        name="robots"
+        content="{{ $robotsContent }}"
+    >
+
+    <link
+        rel="canonical"
+        href="{{ $canonicalUrl }}"
+    >
+
+    <meta
+        property="og:site_name"
+        content="Project Ares"
+    >
+
+    <meta
+        property="og:type"
+        content="website"
+    >
+
+    <meta
+        property="og:title"
+        content="{{ $pageTitle }}"
+    >
+
+    <meta
+        property="og:description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        property="og:url"
+        content="{{ $canonicalUrl }}"
+    >
+
+    <meta
+        property="og:image"
+        content="{{ $ogImage }}"
+    >
+
+    <meta
+        property="og:image:alt"
+        content="{{ $activeCategory?->name ?? 'Project Ares' }} video thumbnail"
+    >
+
+    <meta
+        name="twitter:card"
+        content="summary_large_image"
+    >
+
+    <meta
+        name="twitter:title"
+        content="{{ $pageTitle }}"
+    >
+
+    <meta
+        name="twitter:description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        name="twitter:image"
+        content="{{ $ogImage }}"
+    >
 
     <style>
 
@@ -93,7 +236,6 @@
 
         .page-heading h1 {
             margin: 0;
-
             font-size: 28px;
         }
 
@@ -469,7 +611,6 @@
 
 <body>
 
-
 <header class="site-header">
 
     <div class="header-inner">
@@ -480,7 +621,6 @@
         >
             PROJECT <span>ARES</span>
         </a>
-
 
         <nav class="main-nav">
 
@@ -497,7 +637,6 @@
     </div>
 
 </header>
-
 
 <main class="page">
 
@@ -517,7 +656,6 @@
 
         </h1>
 
-
         <div class="video-count">
 
             {{ number_format($videos->total()) }}
@@ -526,7 +664,6 @@
         </div>
 
     </div>
-
 
     <form
         class="toolbar"
@@ -542,12 +679,13 @@
             name="q"
             value="{{ $search }}"
             placeholder="Search videos..."
+            aria-label="Search videos"
         >
-
 
         <select
             class="sort-select"
             name="sort"
+            aria-label="Sort videos"
         >
 
             <option
@@ -573,14 +711,12 @@
 
         </select>
 
-
         <button
             class="search-button"
             type="submit"
         >
             Search
         </button>
-
 
         @if($search !== '' || $sort !== 'latest')
 
@@ -596,7 +732,6 @@
         @endif
 
     </form>
-
 
     <nav class="category-nav">
 
@@ -614,7 +749,6 @@
         >
             All Videos
         </a>
-
 
         @foreach($categories as $category)
 
@@ -638,7 +772,6 @@
 
     </nav>
 
-
     @if($activeCategory && $activeCategory->description)
 
         <div class="category-description">
@@ -648,7 +781,6 @@
         </div>
 
     @endif
-
 
     @if($search !== '')
 
@@ -663,7 +795,6 @@
         </div>
 
     @endif
-
 
     <div class="video-grid">
 
@@ -693,11 +824,9 @@
 
                         @endif
 
-
                         <div class="play-button">
                             &#9654;
                         </div>
-
 
                         @if($video->duration)
 
@@ -708,7 +837,6 @@
                             </div>
 
                         @endif
-
 
                         <div class="badges">
 
@@ -732,7 +860,6 @@
 
                 </a>
 
-
                 <a
                     class="title"
                     href="{{ route('videos.show', $video->slug) }}"
@@ -740,26 +867,21 @@
                     {{ $video->title }}
                 </a>
 
-
                 <div class="meta">
 
                     {{ number_format($video->views) }}
                     views
 
-
                     @if($video->video_source)
 
                         &middot;
-
                         {{ $video->video_source }}
 
                     @endif
 
-
                     @if($video->category)
 
                         &middot;
-
                         {{ $video->category->name }}
 
                     @endif
@@ -785,7 +907,6 @@
         @endforelse
 
     </div>
-
 
     @if($videos->hasPages())
 

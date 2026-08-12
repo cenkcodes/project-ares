@@ -3,6 +3,23 @@
 
 <head>
 
+    @php
+        $pageTitle = 'Project Ares | Video Discovery';
+
+        $pageDescription =
+            'Browse the latest videos, explore categories and watch embedded content from external video sources on Project Ares.';
+
+        $canonicalUrl = route('home');
+
+        $ogImage =
+            $featuredVideos->first()?->thumbnail
+            ?: asset('images/og-default.jpg');
+
+        $robotsContent = app()->environment('production')
+            ? 'index,follow'
+            : 'noindex,nofollow';
+    @endphp
+
     <meta charset="UTF-8">
 
     <meta
@@ -10,7 +27,77 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Project Ares</title>
+    <title>{{ $pageTitle }}</title>
+
+    <meta
+        name="description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        name="robots"
+        content="{{ $robotsContent }}"
+    >
+
+    <link
+        rel="canonical"
+        href="{{ $canonicalUrl }}"
+    >
+
+    <meta
+        property="og:site_name"
+        content="Project Ares"
+    >
+
+    <meta
+        property="og:type"
+        content="website"
+    >
+
+    <meta
+        property="og:title"
+        content="{{ $pageTitle }}"
+    >
+
+    <meta
+        property="og:description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        property="og:url"
+        content="{{ $canonicalUrl }}"
+    >
+
+    <meta
+        property="og:image"
+        content="{{ $ogImage }}"
+    >
+
+    <meta
+        property="og:image:alt"
+        content="Project Ares video discovery"
+    >
+
+    <meta
+        name="twitter:card"
+        content="summary_large_image"
+    >
+
+    <meta
+        name="twitter:title"
+        content="{{ $pageTitle }}"
+    >
+
+    <meta
+        name="twitter:description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        name="twitter:image"
+        content="{{ $ogImage }}"
+    >
 
     <style>
 
@@ -532,7 +619,6 @@
 
 <body>
 
-
 <header class="site-header">
 
     <div class="header-inner">
@@ -544,7 +630,6 @@
             PROJECT <span>ARES</span>
         </a>
 
-
         <form
             class="header-search"
             method="GET"
@@ -555,6 +640,7 @@
                 type="search"
                 name="q"
                 placeholder="Search videos..."
+                aria-label="Search videos"
             >
 
             <button type="submit">
@@ -562,7 +648,6 @@
             </button>
 
         </form>
-
 
         <nav class="main-nav">
 
@@ -580,7 +665,6 @@
 
 </header>
 
-
 <main class="page">
 
     <section class="hero">
@@ -595,7 +679,6 @@
             external video sources.
         </p>
 
-
         <div class="hero-actions">
 
             <a
@@ -604,7 +687,6 @@
             >
                 Browse Videos
             </a>
-
 
             @if($categories->isNotEmpty())
 
@@ -624,7 +706,6 @@
 
     </section>
 
-
     <section class="section">
 
         <div class="section-header">
@@ -643,7 +724,6 @@
             </a>
 
         </div>
-
 
         <div class="video-grid">
 
@@ -671,11 +751,9 @@
 
                             @endif
 
-
                             <div class="play-button">
                                 &#9654;
                             </div>
-
 
                             @if($video->duration)
 
@@ -686,7 +764,6 @@
                                 </div>
 
                             @endif
-
 
                             <div class="badges">
 
@@ -710,14 +787,12 @@
 
                     </a>
 
-
                     <a
                         class="video-title"
                         href="{{ route('videos.show', $video->slug) }}"
                     >
                         {{ $video->title }}
                     </a>
-
 
                     <div class="video-meta">
 
@@ -747,7 +822,6 @@
 
     </section>
 
-
     <section class="section">
 
         <div class="section-header">
@@ -755,7 +829,6 @@
             <h2 class="section-title">
                 Latest Videos
             </h2>
-
 
             <a
                 class="view-all"
@@ -765,7 +838,6 @@
             </a>
 
         </div>
-
 
         <div class="video-grid">
 
@@ -793,11 +865,9 @@
 
                             @endif
 
-
                             <div class="play-button">
                                 &#9654;
                             </div>
-
 
                             @if($video->duration)
 
@@ -808,7 +878,6 @@
                                 </div>
 
                             @endif
-
 
                             <div class="badges">
 
@@ -832,14 +901,12 @@
 
                     </a>
 
-
                     <a
                         class="video-title"
                         href="{{ route('videos.show', $video->slug) }}"
                     >
                         {{ $video->title }}
                     </a>
-
 
                     <div class="video-meta">
 
@@ -869,7 +936,6 @@
 
     </section>
 
-
     <section class="section">
 
         <div class="section-header">
@@ -879,7 +945,6 @@
             </h2>
 
         </div>
-
 
         <div class="category-grid">
 
@@ -898,7 +963,6 @@
                         {{ $category->name }}
 
                     </div>
-
 
                     <div class="category-count">
 
@@ -921,11 +985,8 @@
 
     </section>
 
-
     <footer class="footer">
-
         Project Ares
-
     </footer>
 
 </main>

@@ -3,6 +3,42 @@
 
 <head>
 
+    @php
+        $pageTitle =
+            $video->title .
+            ' | Project Ares';
+
+        $rawDescription =
+            $video->description
+                ?: 'Watch ' .
+                    $video->title .
+                    ' on Project Ares.';
+
+        $pageDescription =
+            \Illuminate\Support\Str::limit(
+                preg_replace(
+                    '/\s+/',
+                    ' ',
+                    strip_tags($rawDescription)
+                ),
+                155,
+                ''
+            );
+
+        $canonicalUrl = route(
+            'videos.show',
+            $video->slug
+        );
+
+        $robotsContent = app()->environment('production')
+            ? 'index,follow'
+            : 'noindex,nofollow';
+
+        $ogImage =
+            $video->thumbnail
+            ?: asset('images/og-default.jpg');
+    @endphp
+
     <meta charset="UTF-8">
 
     <meta
@@ -10,7 +46,77 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>{{ $video->title }} | Project Ares</title>
+    <title>{{ $pageTitle }}</title>
+
+    <meta
+        name="description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        name="robots"
+        content="{{ $robotsContent }}"
+    >
+
+    <link
+        rel="canonical"
+        href="{{ $canonicalUrl }}"
+    >
+
+    <meta
+        property="og:site_name"
+        content="Project Ares"
+    >
+
+    <meta
+        property="og:type"
+        content="video.other"
+    >
+
+    <meta
+        property="og:title"
+        content="{{ $pageTitle }}"
+    >
+
+    <meta
+        property="og:description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        property="og:url"
+        content="{{ $canonicalUrl }}"
+    >
+
+    <meta
+        property="og:image"
+        content="{{ $ogImage }}"
+    >
+
+    <meta
+        property="og:image:alt"
+        content="{{ $video->title }}"
+    >
+
+    <meta
+        name="twitter:card"
+        content="summary_large_image"
+    >
+
+    <meta
+        name="twitter:title"
+        content="{{ $pageTitle }}"
+    >
+
+    <meta
+        name="twitter:description"
+        content="{{ $pageDescription }}"
+    >
+
+    <meta
+        name="twitter:image"
+        content="{{ $ogImage }}"
+    >
 
     <style>
 
@@ -450,7 +556,6 @@
 
 <body>
 
-
 <header class="site-header">
 
     <div class="header-inner">
@@ -461,7 +566,6 @@
         >
             PROJECT <span>ARES</span>
         </a>
-
 
         <nav class="main-nav">
 
@@ -479,7 +583,6 @@
 
 </header>
 
-
 <main class="page">
 
     <a
@@ -488,7 +591,6 @@
     >
         &larr; Back to videos
     </a>
-
 
     <div class="video-wrapper">
 
@@ -502,13 +604,11 @@
 
     </div>
 
-
     <div class="video-info">
 
         <h1 class="title">
             {{ $video->title }}
         </h1>
-
 
         <div class="meta">
 
@@ -516,7 +616,6 @@
                 {{ number_format($video->views) }}
                 views
             </span>
-
 
             @if($video->video_source)
 
@@ -530,7 +629,6 @@
 
             @endif
 
-
             @if($video->duration)
 
                 <span class="separator">
@@ -542,7 +640,6 @@
                 </span>
 
             @endif
-
 
             @if($video->category)
 
@@ -562,7 +659,6 @@
 
             @endif
 
-
             @if($video->is_4k)
 
                 <span class="badge">
@@ -579,7 +675,6 @@
 
         </div>
 
-
         @if($video->description)
 
             <div class="description">
@@ -589,7 +684,6 @@
             </div>
 
         @endif
-
 
         @if($video->video_source)
 
@@ -603,7 +697,6 @@
         @endif
 
     </div>
-
 
     <section class="related-section">
 
@@ -628,7 +721,6 @@
             @endif
 
         </div>
-
 
         <div class="related-grid">
 
@@ -661,11 +753,9 @@
 
                             @endif
 
-
                             <div class="play-button">
                                 &#9654;
                             </div>
-
 
                             @if($relatedVideo->duration)
 
@@ -679,7 +769,6 @@
                                 </div>
 
                             @endif
-
 
                             <div class="badges">
 
@@ -703,7 +792,6 @@
 
                     </a>
 
-
                     <a
                         class="video-card-title"
                         href="{{ route(
@@ -714,14 +802,12 @@
                         {{ $relatedVideo->title }}
                     </a>
 
-
                     <div class="video-card-meta">
 
                         {{ number_format(
                             $relatedVideo->views
                         ) }}
                         views
-
 
                         @if($relatedVideo->category)
 
