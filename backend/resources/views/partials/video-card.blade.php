@@ -4,6 +4,13 @@
 
     $compact =
         $compact ?? false;
+
+    $fallbackThumbnail =
+        asset('images/og-default.jpg');
+
+    $thumbnailUrl =
+        $video->thumbnail
+        ?: $fallbackThumbnail;
 @endphp
 
 <article
@@ -19,21 +26,12 @@
 
         <div class="video-thumbnail">
 
-            @if($video->thumbnail)
-
-                <img
-                    src="{{ $video->thumbnail }}"
-                    alt="{{ $video->title }}"
-                    loading="lazy"
-                >
-
-            @else
-
-                <div class="video-thumbnail-placeholder">
-                    No thumbnail
-                </div>
-
-            @endif
+            <img
+                src="{{ $thumbnailUrl }}"
+                alt="{{ $video->title }}"
+                loading="lazy"
+                onerror="this.onerror=null;this.src='{{ $fallbackThumbnail }}';"
+            >
 
             <div class="video-play-button">
                 &#9654;
