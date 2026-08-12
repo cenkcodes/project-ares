@@ -211,6 +211,212 @@
             color: #fff;
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Shared Video Card
+        |--------------------------------------------------------------------------
+        */
+
+        .video-card {
+            min-width: 0;
+        }
+
+        .video-thumbnail {
+            position: relative;
+
+            width: 100%;
+
+            aspect-ratio: 16 / 9;
+
+            background: #222;
+
+            border-radius: 9px;
+
+            overflow: hidden;
+        }
+
+        .video-thumbnail img {
+            width: 100%;
+            height: 100%;
+
+            display: block;
+
+            object-fit: cover;
+
+            transition:
+                transform 0.25s ease,
+                opacity 0.25s ease;
+        }
+
+        .video-card:hover .video-thumbnail img {
+            transform:
+                scale(1.04);
+
+            opacity: 0.9;
+        }
+
+        .video-thumbnail-placeholder {
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #222,
+                    #333
+                );
+
+            color: #777;
+
+            font-size: 13px;
+        }
+
+        .video-play-button {
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            width: 52px;
+            height: 52px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            background:
+                rgba(0, 0, 0, 0.72);
+
+            font-size: 20px;
+
+            pointer-events: none;
+        }
+
+        .video-duration {
+            position: absolute;
+
+            right: 8px;
+            bottom: 8px;
+
+            padding:
+                4px 7px;
+
+            border-radius: 4px;
+
+            background:
+                rgba(0, 0, 0, 0.82);
+
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .video-badges {
+            position: absolute;
+
+            left: 8px;
+            bottom: 8px;
+
+            display: flex;
+
+            gap: 5px;
+        }
+
+        .video-badge {
+            padding:
+                4px 6px;
+
+            border-radius: 4px;
+
+            background:
+                rgba(0, 0, 0, 0.82);
+
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .video-card-title {
+            display: -webkit-box;
+
+            margin-top: 10px;
+
+            color: #fff;
+
+            font-size: 15px;
+            font-weight: 600;
+
+            line-height: 1.4;
+
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+
+            overflow: hidden;
+        }
+
+        .video-card-title:hover {
+            color: #ccc;
+        }
+
+        .video-card-meta {
+            margin-top: 7px;
+
+            color: #777;
+
+            font-size: 12px;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Compact Video Card
+        |--------------------------------------------------------------------------
+        */
+
+        .video-card--compact .video-thumbnail {
+            border-radius: 8px;
+        }
+
+        .video-card--compact .video-play-button {
+            width: 48px;
+            height: 48px;
+
+            font-size: 18px;
+        }
+
+        .video-card--compact .video-duration {
+            right: 7px;
+            bottom: 7px;
+
+            padding:
+                4px 6px;
+        }
+
+        .video-card--compact .video-badges {
+            left: 7px;
+            bottom: 7px;
+        }
+
+        .video-card--compact .video-card-title {
+            margin-top: 9px;
+
+            font-size: 14px;
+        }
+
+        .video-card--compact .video-card-meta {
+            margin-top: 6px;
+
+            font-size: 11px;
+        }
+
         @media (max-width: 750px) {
 
             .header-inner {

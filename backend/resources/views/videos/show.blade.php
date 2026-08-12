@@ -211,163 +211,6 @@
         gap: 20px;
     }
 
-    .video-card {
-        min-width: 0;
-    }
-
-    .thumbnail {
-        position: relative;
-
-        width: 100%;
-
-        aspect-ratio: 16 / 9;
-
-        background: #222;
-
-        border-radius: 8px;
-
-        overflow: hidden;
-    }
-
-    .thumbnail img {
-        width: 100%;
-        height: 100%;
-
-        display: block;
-
-        object-fit: cover;
-
-        transition:
-            transform 0.25s ease,
-            opacity 0.25s ease;
-    }
-
-    .video-card:hover .thumbnail img {
-        transform: scale(1.04);
-
-        opacity: 0.88;
-    }
-
-    .thumbnail-placeholder {
-        width: 100%;
-        height: 100%;
-
-        display: flex;
-
-        align-items: center;
-        justify-content: center;
-
-        background:
-            linear-gradient(
-                135deg,
-                #222,
-                #333
-            );
-
-        color: #777;
-
-        font-size: 13px;
-    }
-
-    .play-button {
-        position: absolute;
-
-        left: 50%;
-        top: 50%;
-
-        transform:
-            translate(-50%, -50%);
-
-        width: 48px;
-        height: 48px;
-
-        border-radius: 50%;
-
-        display: flex;
-
-        align-items: center;
-        justify-content: center;
-
-        background:
-            rgba(0, 0, 0, 0.72);
-
-        font-size: 18px;
-
-        pointer-events: none;
-    }
-
-    .duration {
-        position: absolute;
-
-        right: 7px;
-        bottom: 7px;
-
-        padding:
-            4px 6px;
-
-        border-radius: 4px;
-
-        background:
-            rgba(0, 0, 0, 0.82);
-
-        font-size: 11px;
-        font-weight: 600;
-    }
-
-    .badges {
-        position: absolute;
-
-        left: 7px;
-        bottom: 7px;
-
-        display: flex;
-
-        gap: 5px;
-    }
-
-    .card-badge {
-        padding:
-            4px 6px;
-
-        border-radius: 4px;
-
-        background:
-            rgba(0, 0, 0, 0.82);
-
-        font-size: 10px;
-        font-weight: 700;
-    }
-
-    .video-card-title {
-        display: -webkit-box;
-
-        margin-top: 9px;
-
-        color: #fff;
-
-        font-size: 14px;
-        font-weight: 600;
-
-        line-height: 1.4;
-
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-
-        overflow: hidden;
-    }
-
-    .video-card-title:hover {
-        color: #ccc;
-    }
-
-    .video-card-meta {
-        margin-top: 6px;
-
-        color: #777;
-
-        font-size: 11px;
-    }
-
     .empty-state {
         color: #777;
 
@@ -443,10 +286,12 @@
         <div class="meta">
 
             <span>
+
                 {{ number_format(
                     $video->views
                 ) }}
                 views
+
             </span>
 
             @if($video->video_source)
@@ -468,10 +313,12 @@
                 </span>
 
                 <span>
+
                     {{ gmdate(
                         'H:i:s',
                         $video->duration
                     ) }}
+
                 </span>
 
             @endif
@@ -510,6 +357,7 @@
 
         </div>
 
+
         @if($video->description)
 
             <div class="description">
@@ -519,6 +367,7 @@
             </div>
 
         @endif
+
 
         @if($video->video_source)
 
@@ -566,110 +415,14 @@
                 as $relatedVideo
             )
 
-                <article class="video-card">
-
-                    <a
-                        href="{{ route(
-                            'videos.show',
-                            $relatedVideo->slug
-                        ) }}"
-                    >
-
-                        <div class="thumbnail">
-
-                            @if(
-                                $relatedVideo->thumbnail
-                            )
-
-                                <img
-                                    src="{{ $relatedVideo->thumbnail }}"
-                                    alt="{{ $relatedVideo->title }}"
-                                    loading="lazy"
-                                >
-
-                            @else
-
-                                <div class="thumbnail-placeholder">
-                                    No thumbnail
-                                </div>
-
-                            @endif
-
-                            <div class="play-button">
-                                &#9654;
-                            </div>
-
-                            @if(
-                                $relatedVideo->duration
-                            )
-
-                                <div class="duration">
-
-                                    {{ gmdate(
-                                        'H:i:s',
-                                        $relatedVideo->duration
-                                    ) }}
-
-                                </div>
-
-                            @endif
-
-                            <div class="badges">
-
-                                @if(
-                                    $relatedVideo->is_4k
-                                )
-
-                                    <span class="card-badge">
-                                        4K
-                                    </span>
-
-                                @elseif(
-                                    $relatedVideo->is_hd
-                                )
-
-                                    <span class="card-badge">
-                                        HD
-                                    </span>
-
-                                @endif
-
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                    <a
-                        class="video-card-title"
-                        href="{{ route(
-                            'videos.show',
-                            $relatedVideo->slug
-                        ) }}"
-                    >
-                        {{ $relatedVideo->title }}
-                    </a>
-
-                    <div class="video-card-meta">
-
-                        {{ number_format(
-                            $relatedVideo->views
-                        ) }}
-                        views
-
-                        @if(
-                            $relatedVideo->category
-                        )
-
-                            &middot;
-
-                            {{ $relatedVideo->category->name }}
-
-                        @endif
-
-                    </div>
-
-                </article>
+                @include(
+                    'partials.video-card',
+                    [
+                        'video' => $relatedVideo,
+                        'showSource' => false,
+                        'compact' => true,
+                    ]
+                )
 
             @empty
 

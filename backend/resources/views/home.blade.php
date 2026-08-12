@@ -101,7 +101,8 @@
     }
 
     .button {
-        padding: 10px 18px;
+        padding:
+            10px 18px;
 
         border-radius: 6px;
 
@@ -155,160 +156,6 @@
             repeat(4, minmax(0, 1fr));
 
         gap: 24px;
-    }
-
-    .video-card {
-        min-width: 0;
-    }
-
-    .thumbnail {
-        position: relative;
-
-        width: 100%;
-
-        aspect-ratio: 16 / 9;
-
-        background: #222;
-
-        border-radius: 9px;
-
-        overflow: hidden;
-    }
-
-    .thumbnail img {
-        width: 100%;
-        height: 100%;
-
-        display: block;
-        object-fit: cover;
-
-        transition:
-            transform 0.25s ease,
-            opacity 0.25s ease;
-    }
-
-    .video-card:hover .thumbnail img {
-        transform: scale(1.04);
-
-        opacity: 0.9;
-    }
-
-    .thumbnail-placeholder {
-        width: 100%;
-        height: 100%;
-
-        display: flex;
-
-        align-items: center;
-        justify-content: center;
-
-        background:
-            linear-gradient(
-                135deg,
-                #222,
-                #333
-            );
-
-        color: #777;
-
-        font-size: 13px;
-    }
-
-    .play-button {
-        position: absolute;
-
-        left: 50%;
-        top: 50%;
-
-        transform:
-            translate(-50%, -50%);
-
-        width: 52px;
-        height: 52px;
-
-        border-radius: 50%;
-
-        display: flex;
-
-        align-items: center;
-        justify-content: center;
-
-        background:
-            rgba(0, 0, 0, 0.72);
-
-        font-size: 20px;
-
-        pointer-events: none;
-    }
-
-    .duration {
-        position: absolute;
-
-        right: 8px;
-        bottom: 8px;
-
-        padding: 4px 7px;
-
-        background:
-            rgba(0, 0, 0, 0.82);
-
-        border-radius: 4px;
-
-        font-size: 11px;
-        font-weight: 600;
-    }
-
-    .badges {
-        position: absolute;
-
-        left: 8px;
-        bottom: 8px;
-
-        display: flex;
-
-        gap: 5px;
-    }
-
-    .badge {
-        padding: 4px 6px;
-
-        background:
-            rgba(0, 0, 0, 0.82);
-
-        border-radius: 4px;
-
-        font-size: 10px;
-        font-weight: 700;
-    }
-
-    .video-title {
-        display: -webkit-box;
-
-        margin-top: 10px;
-
-        color: #fff;
-
-        font-size: 15px;
-        font-weight: 600;
-
-        line-height: 1.4;
-
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-
-        overflow: hidden;
-    }
-
-    .video-title:hover {
-        color: #ccc;
-    }
-
-    .video-meta {
-        margin-top: 7px;
-
-        color: #777;
-
-        font-size: 12px;
     }
 
     .category-grid {
@@ -478,9 +325,12 @@
 
             <a
                 class="view-all"
-                href="{{ route('videos.index', [
-                    'sort' => 'views'
-                ]) }}"
+                href="{{ route(
+                    'videos.index',
+                    [
+                        'sort' => 'views',
+                    ]
+                ) }}"
             >
                 View popular videos
             </a>
@@ -489,100 +339,19 @@
 
         <div class="video-grid">
 
-            @forelse($featuredVideos as $video)
+            @forelse(
+                $featuredVideos
+                as $video
+            )
 
-                <article class="video-card">
-
-                    <a
-                        href="{{ route(
-                            'videos.show',
-                            $video->slug
-                        ) }}"
-                    >
-
-                        <div class="thumbnail">
-
-                            @if($video->thumbnail)
-
-                                <img
-                                    src="{{ $video->thumbnail }}"
-                                    alt="{{ $video->title }}"
-                                    loading="lazy"
-                                >
-
-                            @else
-
-                                <div class="thumbnail-placeholder">
-                                    No thumbnail
-                                </div>
-
-                            @endif
-
-                            <div class="play-button">
-                                &#9654;
-                            </div>
-
-                            @if($video->duration)
-
-                                <div class="duration">
-
-                                    {{ gmdate(
-                                        'H:i:s',
-                                        $video->duration
-                                    ) }}
-
-                                </div>
-
-                            @endif
-
-                            <div class="badges">
-
-                                @if($video->is_4k)
-
-                                    <span class="badge">
-                                        4K
-                                    </span>
-
-                                @elseif($video->is_hd)
-
-                                    <span class="badge">
-                                        HD
-                                    </span>
-
-                                @endif
-
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                    <a
-                        class="video-title"
-                        href="{{ route(
-                            'videos.show',
-                            $video->slug
-                        ) }}"
-                    >
-                        {{ $video->title }}
-                    </a>
-
-                    <div class="video-meta">
-
-                        {{ number_format($video->views) }}
-                        views
-
-                        @if($video->category)
-
-                            &middot;
-
-                            {{ $video->category->name }}
-
-                        @endif
-
-                    </div>
-
-                </article>
+                @include(
+                    'partials.video-card',
+                    [
+                        'video' => $video,
+                        'showSource' => false,
+                        'compact' => false,
+                    ]
+                )
 
             @empty
 
@@ -616,100 +385,19 @@
 
         <div class="video-grid">
 
-            @forelse($latestVideos as $video)
+            @forelse(
+                $latestVideos
+                as $video
+            )
 
-                <article class="video-card">
-
-                    <a
-                        href="{{ route(
-                            'videos.show',
-                            $video->slug
-                        ) }}"
-                    >
-
-                        <div class="thumbnail">
-
-                            @if($video->thumbnail)
-
-                                <img
-                                    src="{{ $video->thumbnail }}"
-                                    alt="{{ $video->title }}"
-                                    loading="lazy"
-                                >
-
-                            @else
-
-                                <div class="thumbnail-placeholder">
-                                    No thumbnail
-                                </div>
-
-                            @endif
-
-                            <div class="play-button">
-                                &#9654;
-                            </div>
-
-                            @if($video->duration)
-
-                                <div class="duration">
-
-                                    {{ gmdate(
-                                        'H:i:s',
-                                        $video->duration
-                                    ) }}
-
-                                </div>
-
-                            @endif
-
-                            <div class="badges">
-
-                                @if($video->is_4k)
-
-                                    <span class="badge">
-                                        4K
-                                    </span>
-
-                                @elseif($video->is_hd)
-
-                                    <span class="badge">
-                                        HD
-                                    </span>
-
-                                @endif
-
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                    <a
-                        class="video-title"
-                        href="{{ route(
-                            'videos.show',
-                            $video->slug
-                        ) }}"
-                    >
-                        {{ $video->title }}
-                    </a>
-
-                    <div class="video-meta">
-
-                        {{ number_format($video->views) }}
-                        views
-
-                        @if($video->category)
-
-                            &middot;
-
-                            {{ $video->category->name }}
-
-                        @endif
-
-                    </div>
-
-                </article>
+                @include(
+                    'partials.video-card',
+                    [
+                        'video' => $video,
+                        'showSource' => false,
+                        'compact' => false,
+                    ]
+                )
 
             @empty
 
@@ -736,7 +424,10 @@
 
         <div class="category-grid">
 
-            @forelse($categories as $category)
+            @forelse(
+                $categories
+                as $category
+            )
 
                 <a
                     class="category-card"
