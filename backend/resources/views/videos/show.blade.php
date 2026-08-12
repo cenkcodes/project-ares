@@ -1,587 +1,414 @@
-<!DOCTYPE html>
-<html lang="en">
+@php
+    $pageTitle =
+        $video->title .
+        ' | Project Ares';
 
-<head>
+    $rawDescription =
+        $video->description
+            ?: 'Watch ' .
+                $video->title .
+                ' on Project Ares.';
 
-    @php
-        $pageTitle =
-            $video->title .
-            ' | Project Ares';
+    $pageDescription =
+        \Illuminate\Support\Str::limit(
+            preg_replace(
+                '/\s+/',
+                ' ',
+                strip_tags($rawDescription)
+            ),
+            155,
+            ''
+        );
 
-        $rawDescription =
-            $video->description
-                ?: 'Watch ' .
-                    $video->title .
-                    ' on Project Ares.';
-
-        $pageDescription =
-            \Illuminate\Support\Str::limit(
-                preg_replace(
-                    '/\s+/',
-                    ' ',
-                    strip_tags($rawDescription)
-                ),
-                155,
-                ''
-            );
-
-        $canonicalUrl = route(
+    $canonicalUrl =
+        route(
             'videos.show',
             $video->slug
         );
 
-        $robotsContent = app()->environment('production')
+    $robotsContent =
+        app()->environment('production')
             ? 'index,follow'
             : 'noindex,nofollow';
 
-        $ogImage =
-            $video->thumbnail
-            ?: asset('images/og-default.jpg');
-    @endphp
+    $ogType =
+        'video.other';
 
-    <meta charset="UTF-8">
+    $ogImage =
+        $video->thumbnail
+        ?: asset('images/og-default.jpg');
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    $ogImageAlt =
+        $video->title;
 
-    <title>{{ $pageTitle }}</title>
+    $showHeaderSearch = false;
+@endphp
 
-    <meta
-        name="description"
-        content="{{ $pageDescription }}"
-    >
+@extends('layouts.public')
 
-    <meta
-        name="robots"
-        content="{{ $robotsContent }}"
-    >
 
-    <link
-        rel="canonical"
-        href="{{ $canonicalUrl }}"
-    >
+@section('pageStyles')
 
-    <meta
-        property="og:site_name"
-        content="Project Ares"
-    >
+    .page {
+        max-width: 1250px;
 
-    <meta
-        property="og:type"
-        content="video.other"
-    >
+        margin: 0 auto;
 
-    <meta
-        property="og:title"
-        content="{{ $pageTitle }}"
-    >
+        padding: 30px;
+    }
 
-    <meta
-        property="og:description"
-        content="{{ $pageDescription }}"
-    >
+    .back-link {
+        display: inline-block;
 
-    <meta
-        property="og:url"
-        content="{{ $canonicalUrl }}"
-    >
+        margin-bottom: 20px;
 
-    <meta
-        property="og:image"
-        content="{{ $ogImage }}"
-    >
+        color: #aaa;
 
-    <meta
-        property="og:image:alt"
-        content="{{ $video->title }}"
-    >
+        font-size: 14px;
+    }
 
-    <meta
-        name="twitter:card"
-        content="summary_large_image"
-    >
+    .back-link:hover {
+        color: #fff;
+    }
 
-    <meta
-        name="twitter:title"
-        content="{{ $pageTitle }}"
-    >
+    .video-wrapper {
+        position: relative;
 
-    <meta
-        name="twitter:description"
-        content="{{ $pageDescription }}"
-    >
+        width: 100%;
 
-    <meta
-        name="twitter:image"
-        content="{{ $ogImage }}"
-    >
+        aspect-ratio: 16 / 9;
 
-    <style>
+        background: #000;
 
-        * {
-            box-sizing: border-box;
+        overflow: hidden;
+
+        border-radius: 10px;
+    }
+
+    .video-wrapper iframe {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        border: 0;
+    }
+
+    .video-info {
+        padding:
+            22px 0 0;
+    }
+
+    .title {
+        margin: 0;
+
+        color: #fff;
+
+        font-size: 28px;
+
+        line-height: 1.3;
+    }
+
+    .meta {
+        display: flex;
+
+        flex-wrap: wrap;
+
+        align-items: center;
+
+        gap: 10px;
+
+        margin-top: 12px;
+
+        color: #999;
+
+        font-size: 13px;
+    }
+
+    .separator {
+        color: #555;
+    }
+
+    .badge {
+        display: inline-block;
+
+        padding:
+            4px 7px;
+
+        background: #292929;
+
+        border-radius: 4px;
+
+        color: #fff;
+
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .category-link {
+        color: #bbb;
+    }
+
+    .category-link:hover {
+        color: #fff;
+    }
+
+    .description {
+        margin-top: 22px;
+
+        padding-top: 20px;
+
+        border-top:
+            1px solid #292929;
+
+        color: #ccc;
+
+        font-size: 15px;
+
+        line-height: 1.7;
+    }
+
+    .source {
+        margin-top: 16px;
+
+        color: #777;
+
+        font-size: 12px;
+    }
+
+    .related-section {
+        margin-top: 50px;
+
+        padding-top: 30px;
+
+        border-top:
+            1px solid #222;
+    }
+
+    .related-header {
+        display: flex;
+
+        justify-content: space-between;
+        align-items: center;
+
+        gap: 20px;
+
+        margin-bottom: 20px;
+    }
+
+    .related-title {
+        margin: 0;
+
+        font-size: 22px;
+    }
+
+    .related-grid {
+        display: grid;
+
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 20px;
+    }
+
+    .video-card {
+        min-width: 0;
+    }
+
+    .thumbnail {
+        position: relative;
+
+        width: 100%;
+
+        aspect-ratio: 16 / 9;
+
+        background: #222;
+
+        border-radius: 8px;
+
+        overflow: hidden;
+    }
+
+    .thumbnail img {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: cover;
+
+        transition:
+            transform 0.25s ease,
+            opacity 0.25s ease;
+    }
+
+    .video-card:hover .thumbnail img {
+        transform: scale(1.04);
+
+        opacity: 0.88;
+    }
+
+    .thumbnail-placeholder {
+        width: 100%;
+        height: 100%;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        background:
+            linear-gradient(
+                135deg,
+                #222,
+                #333
+            );
+
+        color: #777;
+
+        font-size: 13px;
+    }
+
+    .play-button {
+        position: absolute;
+
+        left: 50%;
+        top: 50%;
+
+        transform:
+            translate(-50%, -50%);
+
+        width: 48px;
+        height: 48px;
+
+        border-radius: 50%;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        background:
+            rgba(0, 0, 0, 0.72);
+
+        font-size: 18px;
+
+        pointer-events: none;
+    }
+
+    .duration {
+        position: absolute;
+
+        right: 7px;
+        bottom: 7px;
+
+        padding:
+            4px 6px;
+
+        border-radius: 4px;
+
+        background:
+            rgba(0, 0, 0, 0.82);
+
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badges {
+        position: absolute;
+
+        left: 7px;
+        bottom: 7px;
+
+        display: flex;
+
+        gap: 5px;
+    }
+
+    .card-badge {
+        padding:
+            4px 6px;
+
+        border-radius: 4px;
+
+        background:
+            rgba(0, 0, 0, 0.82);
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .video-card-title {
+        display: -webkit-box;
+
+        margin-top: 9px;
+
+        color: #fff;
+
+        font-size: 14px;
+        font-weight: 600;
+
+        line-height: 1.4;
+
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+
+        overflow: hidden;
+    }
+
+    .video-card-title:hover {
+        color: #ccc;
+    }
+
+    .video-card-meta {
+        margin-top: 6px;
+
+        color: #777;
+
+        font-size: 11px;
+    }
+
+    .empty-state {
+        color: #777;
+
+        font-size: 14px;
+    }
+
+    @media (max-width: 1000px) {
+
+        .related-grid {
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
         }
 
-        body {
-            margin: 0;
-            padding: 0;
+    }
 
-            background: #0d0d0d;
-            color: #fff;
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .site-header {
-            background: #111;
-
-            border-bottom:
-                1px solid #222;
-        }
-
-        .header-inner {
-            max-width: 1500px;
-
-            margin: 0 auto;
-
-            padding: 16px 30px;
-
-            display: flex;
-
-            justify-content: space-between;
-            align-items: center;
-
-            gap: 20px;
-        }
-
-        .logo {
-            font-size: 22px;
-            font-weight: 800;
-        }
-
-        .logo span {
-            color: #888;
-        }
-
-        .main-nav {
-            display: flex;
-
-            gap: 18px;
-
-            color: #aaa;
-
-            font-size: 14px;
-        }
-
-        .main-nav a:hover {
-            color: #fff;
-        }
+    @media (max-width: 700px) {
 
         .page {
-            max-width: 1250px;
-
-            margin: 0 auto;
-
-            padding: 30px;
-        }
-
-        .back-link {
-            display: inline-block;
-
-            margin-bottom: 20px;
-
-            color: #aaa;
-
-            font-size: 14px;
-        }
-
-        .back-link:hover {
-            color: #fff;
-        }
-
-        .video-wrapper {
-            position: relative;
-
-            width: 100%;
-
-            aspect-ratio: 16 / 9;
-
-            background: #000;
-
-            overflow: hidden;
-
-            border-radius: 10px;
-        }
-
-        .video-wrapper iframe {
-            width: 100%;
-            height: 100%;
-
-            display: block;
-
-            border: 0;
-        }
-
-        .video-info {
-            padding:
-                22px 0 0;
+            padding-left: 18px;
+            padding-right: 18px;
         }
 
         .title {
-            margin: 0;
-
-            color: #fff;
-
-            font-size: 28px;
-
-            line-height: 1.3;
-        }
-
-        .meta {
-            display: flex;
-
-            flex-wrap: wrap;
-
-            align-items: center;
-
-            gap: 10px;
-
-            margin-top: 12px;
-
-            color: #999;
-
-            font-size: 13px;
-        }
-
-        .separator {
-            color: #555;
-        }
-
-        .badge {
-            display: inline-block;
-
-            padding: 4px 7px;
-
-            background: #292929;
-
-            border-radius: 4px;
-
-            color: #fff;
-
-            font-size: 11px;
-
-            font-weight: 700;
-        }
-
-        .category-link {
-            color: #bbb;
-        }
-
-        .category-link:hover {
-            color: #fff;
-        }
-
-        .description {
-            margin-top: 22px;
-
-            padding-top: 20px;
-
-            border-top:
-                1px solid #292929;
-
-            color: #ccc;
-
-            font-size: 15px;
-
-            line-height: 1.7;
-        }
-
-        .source {
-            margin-top: 16px;
-
-            color: #777;
-
-            font-size: 12px;
-        }
-
-        .related-section {
-            margin-top: 50px;
-
-            padding-top: 30px;
-
-            border-top:
-                1px solid #222;
-        }
-
-        .related-header {
-            display: flex;
-
-            justify-content: space-between;
-            align-items: center;
-
-            gap: 20px;
-
-            margin-bottom: 20px;
-        }
-
-        .related-title {
-            margin: 0;
-
             font-size: 22px;
         }
 
+        .video-wrapper {
+            border-radius: 6px;
+        }
+
         .related-grid {
-            display: grid;
-
             grid-template-columns:
-                repeat(4, minmax(0, 1fr));
-
-            gap: 20px;
+                repeat(2, minmax(0, 1fr));
         }
 
-        .video-card {
-            min-width: 0;
-        }
+    }
 
-        .thumbnail {
-            position: relative;
+@endsection
 
-            width: 100%;
 
-            aspect-ratio: 16 / 9;
-
-            background: #222;
-
-            border-radius: 8px;
-
-            overflow: hidden;
-        }
-
-        .thumbnail img {
-            width: 100%;
-            height: 100%;
-
-            display: block;
-
-            object-fit: cover;
-
-            transition:
-                transform 0.25s ease,
-                opacity 0.25s ease;
-        }
-
-        .video-card:hover .thumbnail img {
-            transform: scale(1.04);
-
-            opacity: 0.88;
-        }
-
-        .thumbnail-placeholder {
-            width: 100%;
-            height: 100%;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #222,
-                    #333
-                );
-
-            color: #777;
-
-            font-size: 13px;
-        }
-
-        .play-button {
-            position: absolute;
-
-            left: 50%;
-            top: 50%;
-
-            transform:
-                translate(-50%, -50%);
-
-            width: 48px;
-            height: 48px;
-
-            border-radius: 50%;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            background:
-                rgba(0, 0, 0, 0.72);
-
-            font-size: 18px;
-
-            pointer-events: none;
-        }
-
-        .duration {
-            position: absolute;
-
-            right: 7px;
-            bottom: 7px;
-
-            padding: 4px 6px;
-
-            border-radius: 4px;
-
-            background:
-                rgba(0, 0, 0, 0.82);
-
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .badges {
-            position: absolute;
-
-            left: 7px;
-            bottom: 7px;
-
-            display: flex;
-
-            gap: 5px;
-        }
-
-        .card-badge {
-            padding: 4px 6px;
-
-            border-radius: 4px;
-
-            background:
-                rgba(0, 0, 0, 0.82);
-
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .video-card-title {
-            display: -webkit-box;
-
-            margin-top: 9px;
-
-            color: #fff;
-
-            font-size: 14px;
-            font-weight: 600;
-
-            line-height: 1.4;
-
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-
-            overflow: hidden;
-        }
-
-        .video-card-title:hover {
-            color: #ccc;
-        }
-
-        .video-card-meta {
-            margin-top: 6px;
-
-            color: #777;
-
-            font-size: 11px;
-        }
-
-        .empty-state {
-            color: #777;
-
-            font-size: 14px;
-        }
-
-        @media (max-width: 1000px) {
-
-            .related-grid {
-                grid-template-columns:
-                    repeat(3, minmax(0, 1fr));
-            }
-
-        }
-
-        @media (max-width: 700px) {
-
-            .header-inner,
-            .page {
-                padding-left: 18px;
-                padding-right: 18px;
-            }
-
-            .title {
-                font-size: 22px;
-            }
-
-            .video-wrapper {
-                border-radius: 6px;
-            }
-
-            .related-grid {
-                grid-template-columns:
-                    repeat(2, minmax(0, 1fr));
-            }
-
-        }
-
-        @media (max-width: 500px) {
-
-            .main-nav {
-                display: none;
-            }
-
-        }
-
-    </style>
-
-</head>
-
-<body>
-
-<header class="site-header">
-
-    <div class="header-inner">
-
-        <a
-            class="logo"
-            href="{{ route('home') }}"
-        >
-            PROJECT <span>ARES</span>
-        </a>
-
-        <nav class="main-nav">
-
-            <a href="{{ route('home') }}">
-                Home
-            </a>
-
-            <a href="{{ route('videos.index') }}">
-                Videos
-            </a>
-
-        </nav>
-
-    </div>
-
-</header>
+@section('content')
 
 <main class="page">
 
@@ -592,6 +419,7 @@
         &larr; Back to videos
     </a>
 
+
     <div class="video-wrapper">
 
         <iframe
@@ -599,10 +427,12 @@
             title="{{ $video->title }}"
             loading="lazy"
             allow="autoplay; fullscreen; picture-in-picture"
-            allowfullscreen>
+            allowfullscreen
+        >
         </iframe>
 
     </div>
+
 
     <div class="video-info">
 
@@ -613,7 +443,9 @@
         <div class="meta">
 
             <span>
-                {{ number_format($video->views) }}
+                {{ number_format(
+                    $video->views
+                ) }}
                 views
             </span>
 
@@ -636,7 +468,10 @@
                 </span>
 
                 <span>
-                    {{ gmdate('H:i:s', $video->duration) }}
+                    {{ gmdate(
+                        'H:i:s',
+                        $video->duration
+                    ) }}
                 </span>
 
             @endif
@@ -698,6 +533,7 @@
 
     </div>
 
+
     <section class="related-section">
 
         <div class="related-header">
@@ -715,7 +551,8 @@
                         $video->category->slug
                     ) }}"
                 >
-                    View {{ $video->category->name }}
+                    View
+                    {{ $video->category->name }}
                 </a>
 
             @endif
@@ -724,7 +561,10 @@
 
         <div class="related-grid">
 
-            @forelse($relatedVideos as $relatedVideo)
+            @forelse(
+                $relatedVideos
+                as $relatedVideo
+            )
 
                 <article class="video-card">
 
@@ -737,7 +577,9 @@
 
                         <div class="thumbnail">
 
-                            @if($relatedVideo->thumbnail)
+                            @if(
+                                $relatedVideo->thumbnail
+                            )
 
                                 <img
                                     src="{{ $relatedVideo->thumbnail }}"
@@ -757,7 +599,9 @@
                                 &#9654;
                             </div>
 
-                            @if($relatedVideo->duration)
+                            @if(
+                                $relatedVideo->duration
+                            )
 
                                 <div class="duration">
 
@@ -772,13 +616,17 @@
 
                             <div class="badges">
 
-                                @if($relatedVideo->is_4k)
+                                @if(
+                                    $relatedVideo->is_4k
+                                )
 
                                     <span class="card-badge">
                                         4K
                                     </span>
 
-                                @elseif($relatedVideo->is_hd)
+                                @elseif(
+                                    $relatedVideo->is_hd
+                                )
 
                                     <span class="card-badge">
                                         HD
@@ -809,7 +657,9 @@
                         ) }}
                         views
 
-                        @if($relatedVideo->category)
+                        @if(
+                            $relatedVideo->category
+                        )
 
                             &middot;
 
@@ -835,6 +685,4 @@
 
 </main>
 
-</body>
-
-</html>
+@endsection
