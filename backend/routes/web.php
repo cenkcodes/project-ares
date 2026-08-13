@@ -18,6 +18,21 @@ Route::get('/categories/{slug}', [VideoController::class, 'category'])
 Route::get('/videos/{slug}', [VideoController::class, 'show'])
     ->name('videos.show');
 
+Route::view('/about', 'pages.about')
+    ->name('pages.about');
+
+Route::view('/contact', 'pages.contact')
+    ->name('pages.contact');
+
+Route::view('/privacy', 'pages.privacy')
+    ->name('pages.privacy');
+
+Route::view('/terms', 'pages.terms')
+    ->name('pages.terms');
+
+Route::view('/content-removal', 'pages.content-removal')
+    ->name('pages.content-removal');
+
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])
     ->name('seo.sitemap');
 

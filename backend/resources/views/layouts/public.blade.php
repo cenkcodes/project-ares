@@ -416,6 +416,226 @@
             font-size: 11px;
         }
 
+        /*
+         * Shared informational pages
+         */
+
+        .content-page {
+            width: 100%;
+
+            max-width: 1000px;
+
+            margin: 0 auto;
+
+            padding:
+                48px 30px 70px;
+        }
+
+        .content-page-header {
+            margin-bottom: 32px;
+        }
+
+        .content-page-eyebrow {
+            margin-bottom: 10px;
+
+            color: #777;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+
+            text-transform: uppercase;
+        }
+
+        .content-page-title {
+            margin:
+                0 0 14px;
+
+            font-size: 38px;
+
+            line-height: 1.2;
+        }
+
+        .content-page-intro {
+            max-width: 760px;
+
+            margin: 0;
+
+            color: #999;
+
+            font-size: 16px;
+
+            line-height: 1.7;
+        }
+
+        .content-panel {
+            margin-top: 24px;
+
+            padding: 28px;
+
+            border:
+                1px solid #242424;
+
+            border-radius: 12px;
+
+            background: #151515;
+        }
+
+        .content-panel h2 {
+            margin:
+                0 0 12px;
+
+            font-size: 20px;
+        }
+
+        .content-panel p {
+            margin:
+                0 0 16px;
+
+            color: #bbb;
+
+            font-size: 15px;
+
+            line-height: 1.75;
+        }
+
+        .content-panel p:last-child {
+            margin-bottom: 0;
+        }
+
+        .content-panel ul {
+            margin:
+                10px 0 0;
+
+            padding-left: 22px;
+
+            color: #bbb;
+        }
+
+        .content-panel li {
+            margin-bottom: 9px;
+
+            line-height: 1.6;
+        }
+
+        .content-note {
+            margin-top: 24px;
+
+            padding: 18px 20px;
+
+            border:
+                1px solid #303030;
+
+            border-radius: 9px;
+
+            background: #111;
+
+            color: #888;
+
+            font-size: 13px;
+
+            line-height: 1.7;
+        }
+
+        /*
+         * Shared footer
+         */
+
+        .site-footer {
+            margin-top: 50px;
+
+            border-top:
+                1px solid #222;
+
+            background: #0a0a0a;
+        }
+
+        .site-footer-inner {
+            max-width: 1500px;
+
+            margin: 0 auto;
+
+            padding:
+                30px 30px 26px;
+        }
+
+        .site-footer-top {
+            display: flex;
+
+            align-items: flex-start;
+            justify-content: space-between;
+
+            gap: 30px;
+        }
+
+        .site-footer-brand {
+            max-width: 440px;
+        }
+
+        .site-footer-logo {
+            margin-bottom: 10px;
+
+            font-size: 18px;
+            font-weight: 800;
+
+            letter-spacing: 1px;
+        }
+
+        .site-footer-description {
+            color: #777;
+
+            font-size: 12px;
+
+            line-height: 1.65;
+        }
+
+        .site-footer-links {
+            display: flex;
+            flex-wrap: wrap;
+
+            justify-content: flex-end;
+
+            gap:
+                12px 20px;
+
+            color: #999;
+
+            font-size: 13px;
+        }
+
+        .site-footer-links a:hover {
+            color: #fff;
+        }
+
+        .site-footer-bottom {
+            margin-top: 24px;
+
+            padding-top: 20px;
+
+            border-top:
+                1px solid #1d1d1d;
+
+            display: flex;
+
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 20px;
+
+            color: #666;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+        }
+
+        .adult-notice {
+            color: #888;
+
+            font-weight: 600;
+        }
+
         @media (max-width: 750px) {
 
             .header-inner {
@@ -431,6 +651,35 @@
                 flex-basis: 100%;
 
                 max-width: none;
+            }
+
+            .content-page {
+                padding:
+                    34px 18px 50px;
+            }
+
+            .content-page-title {
+                font-size: 30px;
+            }
+
+            .content-panel {
+                padding: 22px;
+            }
+
+            .site-footer-inner {
+                padding:
+                    26px 18px 22px;
+            }
+
+            .site-footer-top,
+            .site-footer-bottom {
+                flex-direction: column;
+
+                align-items: flex-start;
+            }
+
+            .site-footer-links {
+                justify-content: flex-start;
             }
 
         }
@@ -460,6 +709,8 @@
     )
 
     @yield('content')
+
+    @include('partials.site-footer')
 
 </body>
 
