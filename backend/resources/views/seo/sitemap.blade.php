@@ -3,18 +3,37 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
     <url>
+
         <loc>{{ route('home') }}</loc>
+
+        @if($siteLastModified)
+
+            <lastmod>{{ $siteLastModified->toAtomString() }}</lastmod>
+
+        @endif
+
     </url>
 
     <url>
+
         <loc>{{ route('videos.index') }}</loc>
+
+        @if($siteLastModified)
+
+            <lastmod>{{ $siteLastModified->toAtomString() }}</lastmod>
+
+        @endif
+
     </url>
 
     @foreach($categories as $category)
 
         <url>
 
-            <loc>{{ route('videos.category', $category->slug) }}</loc>
+            <loc>{{ route(
+                'videos.category',
+                $category->slug
+            ) }}</loc>
 
             @if($category->updated_at)
 
@@ -30,7 +49,10 @@
 
         <url>
 
-            <loc>{{ route('videos.show', $video->slug) }}</loc>
+            <loc>{{ route(
+                'videos.show',
+                $video->slug
+            ) }}</loc>
 
             @if($video->updated_at)
 

@@ -28,12 +28,41 @@ class SeoController extends Controller
             ->orderBy('id')
             ->get();
 
+        $latestCategoryUpdate =
+            $categories
+                ->pluck('updated_at')
+                ->filter()
+                ->sortDesc()
+                ->first();
+
+        $latestVideoUpdate =
+            $videos
+                ->pluck('updated_at')
+                ->filter()
+                ->sortDesc()
+                ->first();
+
+        $siteLastModified =
+            collect([
+                $latestCategoryUpdate,
+                $latestVideoUpdate,
+            ])
+                ->filter()
+                ->sortDesc()
+                ->first();
+
         return response()
             ->view(
                 'seo.sitemap',
                 [
-                    'categories' => $categories,
-                    'videos' => $videos,
+                    'categories' =>
+                        $categories,
+
+                    'videos' =>
+                        $videos,
+
+                    'siteLastModified' =>
+                        $siteLastModified,
                 ]
             )
             ->header(
