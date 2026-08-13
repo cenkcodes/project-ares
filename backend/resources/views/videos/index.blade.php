@@ -10,14 +10,14 @@
         $pageTitle =
             'Search: ' .
             $search .
-            ' | Project Ares';
+            ' | Xurvexa';
     } elseif ($activeCategory) {
         $pageTitle =
             $activeCategory->name .
-            ' Videos | Project Ares';
+            ' Videos | Xurvexa';
     } else {
         $pageTitle =
-            'Videos | Project Ares';
+            'Videos | Xurvexa';
     }
 
     if ($activeCategory) {
@@ -25,10 +25,10 @@
             $activeCategory->description
                 ?: 'Browse ' .
                     $activeCategory->name .
-                    ' videos on Project Ares.';
+                    ' videos on Xurvexa.';
     } else {
         $pageDescription =
-            'Browse videos on Project Ares. Search, sort and explore available video categories.';
+            'Browse videos on Xurvexa. Search, sort and explore available video categories.';
     }
 
     $canonicalParameters = [];
@@ -78,7 +78,7 @@
         ?: asset('images/og-default.jpg');
 
     $ogImageAlt =
-        ($activeCategory?->name ?? 'Project Ares') .
+        ($activeCategory?->name ?? 'Xurvexa') .
         ' video thumbnail';
 
     $showHeaderSearch = false;

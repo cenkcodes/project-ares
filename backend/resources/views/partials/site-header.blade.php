@@ -5,8 +5,9 @@
         <a
             class="logo"
             href="{{ route('home') }}"
+            aria-label="Xurvexa home"
         >
-            PROJECT <span>ARES</span>
+            XUR<span>VEXA</span>
         </a>
 
         @if($showSearch ?? false)
@@ -32,7 +33,10 @@
 
         @endif
 
-        <nav class="main-nav">
+        <nav
+            class="main-nav"
+            aria-label="Main navigation"
+        >
 
             <a href="{{ route('home') }}">
                 Home

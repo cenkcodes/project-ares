@@ -1,13 +1,13 @@
 @php
     $pageTitle =
         $video->title .
-        ' | Project Ares';
+        ' | Xurvexa';
 
     $rawDescription =
         $video->description
             ?: 'Watch ' .
                 $video->title .
-                ' on Project Ares.';
+                ' on Xurvexa.';
 
     $pageDescription =
         \Illuminate\Support\Str::limit(

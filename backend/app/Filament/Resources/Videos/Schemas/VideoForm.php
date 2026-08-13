@@ -40,7 +40,7 @@ class VideoForm
                     ->maxLength(2048)
                     ->columnSpanFull()
                     ->helperText(
-                        'External embed URL. The video file is not uploaded to Project Ares.'
+                        'External embed URL. The video file is not uploaded to Xurvexa.'
                     ),
 
                 TextInput::make('thumbnail')

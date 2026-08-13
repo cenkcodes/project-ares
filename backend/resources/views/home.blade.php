@@ -1,9 +1,9 @@
 @php
     $pageTitle =
-        'Project Ares | Video Discovery';
+        'Xurvexa | Video Discovery';
 
     $pageDescription =
-        'Browse the latest videos, explore categories and watch embedded content from external video sources on Project Ares.';
+        'Browse the latest videos, explore categories and watch embedded content from external video sources on Xurvexa.';
 
     $canonicalUrl =
         route('home');
@@ -16,7 +16,7 @@
         ?: asset('images/og-default.jpg');
 
     $ogImageAlt =
-        'Project Ares video discovery';
+        'Xurvexa video discovery';
 
     $robotsContent =
         app()->environment('production')
@@ -278,7 +278,7 @@
     <section class="hero">
 
         <h1>
-            Project Ares
+            Xurvexa
         </h1>
 
         <p>
@@ -468,7 +468,7 @@
 
 
     <footer class="footer">
-        Project Ares
+        Xurvexa
     </footer>
 
 </main>

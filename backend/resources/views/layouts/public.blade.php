@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>{{ $pageTitle ?? 'Project Ares' }}</title>
+    <title>{{ $pageTitle ?? 'Xurvexa' }}</title>
 
     <meta
         name="description"
@@ -27,9 +27,20 @@
         href="{{ $canonicalUrl ?? url()->current() }}"
     >
 
+    <link
+        rel="icon"
+        type="image/svg+xml"
+        href="{{ asset('favicon.svg') }}"
+    >
+
+    <meta
+        name="theme-color"
+        content="#111111"
+    >
+
     <meta
         property="og:site_name"
-        content="Project Ares"
+        content="Xurvexa"
     >
 
     <meta
@@ -39,7 +50,7 @@
 
     <meta
         property="og:title"
-        content="{{ $pageTitle ?? 'Project Ares' }}"
+        content="{{ $pageTitle ?? 'Xurvexa' }}"
     >
 
     <meta
@@ -59,7 +70,7 @@
 
     <meta
         property="og:image:alt"
-        content="{{ $ogImageAlt ?? 'Project Ares' }}"
+        content="{{ $ogImageAlt ?? 'Xurvexa' }}"
     >
 
     <meta
@@ -69,7 +80,7 @@
 
     <meta
         name="twitter:title"
-        content="{{ $pageTitle ?? 'Project Ares' }}"
+        content="{{ $pageTitle ?? 'Xurvexa' }}"
     >
 
     <meta
@@ -210,12 +221,6 @@
         .main-nav a:hover {
             color: #fff;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Shared Video Card
-        |--------------------------------------------------------------------------
-        */
 
         .video-card {
             min-width: 0;
@@ -374,12 +379,6 @@
 
             font-size: 12px;
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Compact Video Card
-        |--------------------------------------------------------------------------
-        */
 
         .video-card--compact .video-thumbnail {
             border-radius: 8px;
