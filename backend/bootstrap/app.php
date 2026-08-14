@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\CloudflareNetworks;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,6 +28,15 @@ return Application::configure(
                             '.*',
                         ],
                 subdomains: false,
+            );
+
+            $middleware->trustProxies(
+                at:
+                    CloudflareNetworks::trustedProxies(),
+
+                headers:
+                    Request::HEADER_X_FORWARDED_FOR |
+                    Request::HEADER_X_FORWARDED_PROTO
             );
 
             $middleware->append(

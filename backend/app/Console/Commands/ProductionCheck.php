@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\CloudflareNetworks;
 use Illuminate\Console\Command;
 
 class ProductionCheck extends Command
@@ -14,6 +15,24 @@ class ProductionCheck extends Command
 
     public function handle(): int
     {
+        $cloudflareProxies =
+            CloudflareNetworks::trustedProxies();
+
+        $unsafeProxyEntries = [
+            '*',
+            '0.0.0.0/0',
+            '::/0',
+        ];
+
+        $cloudflareProxyAllowlistIsSafe =
+            count($cloudflareProxies) === 22 &&
+            empty(
+                array_intersect(
+                    $unsafeProxyEntries,
+                    $cloudflareProxies
+                )
+            );
+
         $checks = [
             [
                 'name' =>
@@ -64,6 +83,21 @@ class ProductionCheck extends Command
                 'passes' =>
                     config('app.url') ===
                     'https://xurvexa.com',
+            ],
+
+            [
+                'name' =>
+                    'Cloudflare proxy allowlist',
+
+                'expected' =>
+                    '22 restricted CIDR ranges',
+
+                'actual' =>
+                    count($cloudflareProxies) .
+                    ' CIDR ranges',
+
+                'passes' =>
+                    $cloudflareProxyAllowlistIsSafe,
             ],
 
             [
