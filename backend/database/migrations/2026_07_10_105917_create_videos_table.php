@@ -14,15 +14,38 @@ return new class extends Migration
         Schema::create('videos', function (Blueprint $table) {
             $table->id();
 
-            $table->string('title');
+            $table->text('title');
+            $table->string('slug')->unique();
+
             $table->text('description')->nullable();
-            $table->string('embed_url');
-            $table->string('thumbnail')->nullable();
+            $table->text('embed_url');
 
-            $table->foreignId('category_id')->nullable();
+            $table->string('video_source')->nullable();
+            $table->text('thumbnail')->nullable();
+            $table->unsignedInteger('duration')->nullable();
 
-            $table->boolean('is_active')->default(true);
-            $table->unsignedBigInteger('views')->default(0);
+            $table->foreignId('category_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            $table->unsignedBigInteger('views')
+                ->default(0);
+
+            $table->boolean('is_hd')
+                ->default(false);
+
+            $table->boolean('is_4k')
+                ->default(false);
+
+            $table->boolean('is_featured')
+                ->default(false);
+
+            $table->boolean('is_premium')
+                ->default(false);
+
+            $table->boolean('is_active')
+                ->default(true);
 
             $table->timestamps();
         });

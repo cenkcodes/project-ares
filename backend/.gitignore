@@ -36,3 +36,7 @@ Homestead.json
 Homestead.yaml
 
 Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]

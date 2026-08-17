@@ -7,6 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Video extends Model
 {
+    public const MAX_TITLE_LENGTH = 1000;
+    public const MAX_SLUG_LENGTH = 255;
+    public const MAX_DESCRIPTION_LENGTH = 100000;
+    public const MAX_URL_LENGTH = 8192;
+    public const MAX_VIDEO_SOURCE_LENGTH = 255;
+
+    // 365 days in seconds.
+    public const MAX_DURATION_SECONDS = 31536000;
+
     protected $fillable = [
         'title',
         'slug',

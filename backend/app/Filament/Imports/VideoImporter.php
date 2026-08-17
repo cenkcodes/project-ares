@@ -20,7 +20,8 @@ class VideoImporter extends Importer
                 ->requiredMappingForNewRecordsOnly()
                 ->rules([
                     'required',
-                    'max:255',
+                    'string',
+                    'max:' . Video::MAX_TITLE_LENGTH,
                 ])
                 ->example('Sample Video'),
 
@@ -29,13 +30,19 @@ class VideoImporter extends Importer
                 ->requiredMapping()
                 ->rules([
                     'required',
-                    'max:255',
+                    'string',
+                    'max:' . Video::MAX_SLUG_LENGTH,
                 ])
                 ->example('sample-video'),
 
             ImportColumn::make('description')
                 ->label('Description')
                 ->ignoreBlankState()
+                ->rules([
+                    'nullable',
+                    'string',
+                    'max:' . Video::MAX_DESCRIPTION_LENGTH,
+                ])
                 ->example('Sample video description'),
 
             ImportColumn::make('embed_url')
@@ -44,7 +51,7 @@ class VideoImporter extends Importer
                 ->rules([
                     'required',
                     'url',
-                    'max:2048',
+                    'max:' . Video::MAX_URL_LENGTH,
                 ])
                 ->example(
                     'https://www.youtube.com/embed/M7lc1UVf-VE'
@@ -55,7 +62,8 @@ class VideoImporter extends Importer
                 ->ignoreBlankState()
                 ->rules([
                     'nullable',
-                    'max:255',
+                    'string',
+                    'max:' . Video::MAX_VIDEO_SOURCE_LENGTH,
                 ])
                 ->example('youtube'),
 
@@ -65,7 +73,7 @@ class VideoImporter extends Importer
                 ->rules([
                     'nullable',
                     'url',
-                    'max:2048',
+                    'max:' . Video::MAX_URL_LENGTH,
                 ])
                 ->example(
                     'https://img.youtube.com/vi/M7lc1UVf-VE/hqdefault.jpg'
@@ -79,6 +87,7 @@ class VideoImporter extends Importer
                     'nullable',
                     'integer',
                     'min:0',
+                    'max:' . Video::MAX_DURATION_SECONDS,
                 ])
                 ->example('596'),
 
@@ -87,7 +96,10 @@ class VideoImporter extends Importer
                 ->relationship(
                     resolveUsing: 'slug'
                 )
-                ->ignoreBlankState()
+                ->requiredMappingForNewRecordsOnly()
+                ->rules([
+                    'required',
+                ])
                 ->example('milf')
                 ->helperText(
                     'Use the category slug, not the category database ID.'
