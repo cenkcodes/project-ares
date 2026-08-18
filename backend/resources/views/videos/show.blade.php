@@ -253,6 +253,19 @@
 
 @section('content')
 
+<div
+    data-xurvexa-monetization
+    data-interaction-url="{{ route('monetization.interaction') }}"
+    data-decision-url="{{ route('monetization.decision') }}"
+    data-event-url="{{ route('monetization.event') }}"
+    data-csrf-token="{{ csrf_token() }}"
+    data-video-id="{{ $video->id }}"
+    data-placement-key="video_player"
+    hidden
+>
+</div>
+
+
 <main class="page">
 
     <a
@@ -437,5 +450,8 @@
     </section>
 
 </main>
+
+
+@vite('resources/js/video-monetization.js')
 
 @endsection
