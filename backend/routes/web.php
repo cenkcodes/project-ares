@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MonetizationRuntimeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\VideoController;
@@ -17,6 +18,25 @@ Route::get('/categories/{slug}', [VideoController::class, 'category'])
 
 Route::get('/videos/{slug}', [VideoController::class, 'show'])
     ->name('videos.show');
+
+Route::prefix('monetization')
+    ->name('monetization.')
+    ->group(function () {
+        Route::post(
+            '/interaction',
+            [MonetizationRuntimeController::class, 'interaction']
+        )->name('interaction');
+
+        Route::post(
+            '/decision',
+            [MonetizationRuntimeController::class, 'decision']
+        )->name('decision');
+
+        Route::post(
+            '/event',
+            [MonetizationRuntimeController::class, 'event']
+        )->name('event');
+    });
 
 Route::view('/about', 'pages.about')
     ->name('pages.about');

@@ -47,7 +47,8 @@ return Application::configure(
     ->withExceptions(
         function (Exceptions $exceptions): void {
             $exceptions->shouldRenderJsonWhen(
-                fn (Request $request) =>
+                fn (Request $request): bool =>
+                    $request->expectsJson() ||
                     $request->is('api/*'),
             );
         }
