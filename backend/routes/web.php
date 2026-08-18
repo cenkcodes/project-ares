@@ -25,17 +25,29 @@ Route::prefix('monetization')
         Route::post(
             '/interaction',
             [MonetizationRuntimeController::class, 'interaction']
-        )->name('interaction');
+        )
+            ->middleware(
+                'throttle:monetization-interaction'
+            )
+            ->name('interaction');
 
         Route::post(
             '/decision',
             [MonetizationRuntimeController::class, 'decision']
-        )->name('decision');
+        )
+            ->middleware(
+                'throttle:monetization-decision'
+            )
+            ->name('decision');
 
         Route::post(
             '/event',
             [MonetizationRuntimeController::class, 'event']
-        )->name('event');
+        )
+            ->middleware(
+                'throttle:monetization-event'
+            )
+            ->name('event');
     });
 
 Route::view('/about', 'pages.about')
