@@ -28,6 +28,14 @@ class XurvexaMonetizationClient {
         this.lastInteractionAt = 0;
 
         this.interactionThrottleMs = 750;
+
+        this.meaningfulInteractionSelector =
+            '[data-xurvexa-meaningful-interaction]';
+
+        this.boundInteractionHandler =
+            this.handleMeaningfulInteraction.bind(
+                this
+            );
     }
 
     isConfigured() {
@@ -53,7 +61,108 @@ class XurvexaMonetizationClient {
         ).matches;
     }
 
-    async recordMeaningfulInteraction() {
+    bindMeaningfulInteractions() {
+        document.addEventListener(
+            'click',
+            this.boundInteractionHandler,
+            {
+                capture: true,
+            }
+        );
+    }
+
+    unbindMeaningfulInteractions() {
+        document.removeEventListener(
+            'click',
+            this.boundInteractionHandler,
+            {
+                capture: true,
+            }
+        );
+    }
+
+    handleMeaningfulInteraction(event) {
+        if (
+            event.defaultPrevented ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+        ) {
+            return;
+        }
+
+        if (
+            typeof event.button === 'number' &&
+            event.button !== 0
+        ) {
+            return;
+        }
+
+        const target =
+            event.target instanceof Element
+                ? event.target
+                : null;
+
+        if (!target) {
+            return;
+        }
+
+        const interactionElement =
+            target.closest(
+                this.meaningfulInteractionSelector
+            );
+
+        if (!interactionElement) {
+            return;
+        }
+
+        if (
+            interactionElement instanceof
+            HTMLAnchorElement
+        ) {
+            if (
+                interactionElement.target === '_blank' ||
+                interactionElement.hasAttribute(
+                    'download'
+                )
+            ) {
+                return;
+            }
+
+            let destination;
+
+            try {
+                destination =
+                    new URL(
+                        interactionElement.href,
+                        window.location.href
+                    );
+            } catch {
+                return;
+            }
+
+            if (
+                destination.origin !==
+                window.location.origin
+            ) {
+                return;
+            }
+        }
+
+        this.recordMeaningfulInteraction({
+            keepalive: true,
+        }).catch(() => {
+            /*
+             * Interaction tracking must never
+             * interfere with normal navigation.
+             */
+        });
+    }
+
+    async recordMeaningfulInteraction(
+        options = {}
+    ) {
         const now = Date.now();
 
         if (
@@ -67,7 +176,11 @@ class XurvexaMonetizationClient {
 
         return this.postJson(
             this.interactionUrl,
-            {}
+            {},
+            {
+                keepalive:
+                    options.keepalive === true,
+            }
         );
     }
 
@@ -205,7 +318,8 @@ class XurvexaMonetizationClient {
 
     async postJson(
         url,
-        payload
+        payload,
+        options = {}
     ) {
         if (!this.isConfigured()) {
             throw new Error(
@@ -222,48 +336,62 @@ class XurvexaMonetizationClient {
             );
         }
 
+        const useKeepalive =
+            options.keepalive === true;
+
         const controller =
-            new AbortController();
+            useKeepalive
+                ? null
+                : new AbortController();
 
         const timeoutId =
-            window.setTimeout(
-                () => {
-                    controller.abort();
-                },
-                this.requestTimeoutMs
-            );
+            controller
+                ? window.setTimeout(
+                    () => {
+                        controller.abort();
+                    },
+                    this.requestTimeoutMs
+                )
+                : null;
 
         try {
+            const fetchOptions = {
+                method: 'POST',
+
+                credentials:
+                    'same-origin',
+
+                headers: {
+                    Accept:
+                        'application/json',
+
+                    'Content-Type':
+                        'application/json',
+
+                    'X-CSRF-TOKEN':
+                        this.csrfToken,
+
+                    'X-Requested-With':
+                        'XMLHttpRequest',
+                },
+
+                body:
+                    JSON.stringify(
+                        payload
+                    ),
+
+                keepalive:
+                    useKeepalive,
+            };
+
+            if (controller) {
+                fetchOptions.signal =
+                    controller.signal;
+            }
+
             const response = await fetch(
                 url,
-                {
-                    method: 'POST',
-
-                    credentials:
-                        'same-origin',
-
-                    headers: {
-                        Accept:
-                            'application/json',
-
-                        'Content-Type':
-                            'application/json',
-
-                        'X-CSRF-TOKEN':
-                            this.csrfToken,
-
-                        'X-Requested-With':
-                            'XMLHttpRequest',
-                    },
-
-                    body:
-                        JSON.stringify(
-                            payload
-                        ),
-
-                    signal:
-                        controller.signal,
-                }
+                fetchOptions
             );
 
             const data =
@@ -291,9 +419,11 @@ class XurvexaMonetizationClient {
 
             throw error;
         } finally {
-            window.clearTimeout(
-                timeoutId
-            );
+            if (timeoutId !== null) {
+                window.clearTimeout(
+                    timeoutId
+                );
+            }
         }
     }
 
@@ -414,6 +544,8 @@ function bootXurvexaMonetization() {
 
         return;
     }
+
+    client.bindMeaningfulInteractions();
 
     window.XurvexaMonetization =
         client;

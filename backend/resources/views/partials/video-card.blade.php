@@ -22,6 +22,7 @@
             'videos.show',
             $video->slug
         ) }}"
+        data-xurvexa-meaningful-interaction="video_navigation"
     >
 
         <div class="video-thumbnail">
@@ -78,6 +79,7 @@
             'videos.show',
             $video->slug
         ) }}"
+        data-xurvexa-meaningful-interaction="video_navigation"
     >
         {{ $video->title }}
     </a>
