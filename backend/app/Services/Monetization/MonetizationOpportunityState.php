@@ -3,9 +3,11 @@
 namespace App\Services\Monetization;
 
 use App\Models\AdEvent;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Throwable;
 
 class MonetizationOpportunityState
 {
@@ -14,6 +16,9 @@ class MonetizationOpportunityState
 
     private const MAX_OPPORTUNITIES =
         100;
+
+    public const OPPORTUNITY_TTL_SECONDS =
+        60;
 
     public function __construct(
         private readonly Session $session
@@ -52,11 +57,6 @@ class MonetizationOpportunityState
         $opportunities =
             $this->opportunities();
 
-        /*
-         * Re-inserting an existing UUID moves it
-         * to the newest position and resets its
-         * event claims.
-         */
         unset(
             $opportunities[
                 $opportunityUuid
@@ -85,7 +85,8 @@ class MonetizationOpportunityState
                 [],
 
             'created_at' =>
-                now()->toIso8601String(),
+                CarbonImmutable::now()
+                    ->toIso8601String(),
         ];
 
         while (
@@ -97,8 +98,7 @@ class MonetizationOpportunityState
             );
         }
 
-        $this->session->put(
-            self::SESSION_KEY,
+        $this->storeOpportunities(
             $opportunities
         );
     }
@@ -133,7 +133,7 @@ class MonetizationOpportunityState
             )
         ) {
             throw new InvalidArgumentException(
-                'Unknown monetization opportunity.'
+                'Unknown or expired monetization opportunity.'
             );
         }
 
@@ -187,8 +187,7 @@ class MonetizationOpportunityState
             $opportunityUuid
         ] = $opportunity;
 
-        $this->session->put(
-            self::SESSION_KEY,
+        $this->storeOpportunities(
             $opportunities
         );
 
@@ -232,10 +231,103 @@ class MonetizationOpportunityState
         );
 
         if (! is_array($value)) {
+            $this->storeOpportunities(
+                []
+            );
+
             return [];
         }
 
-        return $value;
+        $filtered =
+            $this->removeExpired(
+                $value
+            );
+
+        if (
+            count($filtered) !==
+            count($value)
+        ) {
+            $this->storeOpportunities(
+                $filtered
+            );
+        }
+
+        return $filtered;
+    }
+
+    private function removeExpired(
+        array $opportunities
+    ): array {
+        $now =
+            CarbonImmutable::now();
+
+        foreach (
+            $opportunities
+            as $uuid => $opportunity
+        ) {
+            if (
+                ! is_array(
+                    $opportunity
+                ) ||
+                $this->isExpired(
+                    $opportunity,
+                    $now
+                )
+            ) {
+                unset(
+                    $opportunities[
+                        $uuid
+                    ]
+                );
+            }
+        }
+
+        return $opportunities;
+    }
+
+    private function isExpired(
+        array $opportunity,
+        CarbonImmutable $now
+    ): bool {
+        $createdAt =
+            $opportunity[
+                'created_at'
+            ] ?? null;
+
+        if (
+            ! is_string(
+                $createdAt
+            ) ||
+            trim($createdAt) === ''
+        ) {
+            return true;
+        }
+
+        try {
+            $created =
+                CarbonImmutable::parse(
+                    $createdAt
+                );
+        } catch (Throwable) {
+            return true;
+        }
+
+        return $created
+            ->addSeconds(
+                self::OPPORTUNITY_TTL_SECONDS
+            )
+            ->lessThanOrEqualTo(
+                $now
+            );
+    }
+
+    private function storeOpportunities(
+        array $opportunities
+    ): void {
+        $this->session->put(
+            self::SESSION_KEY,
+            $opportunities
+        );
     }
 
     private function assertContextMatches(

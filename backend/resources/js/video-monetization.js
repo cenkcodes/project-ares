@@ -23,7 +23,29 @@ class XurvexaMonetizationClient {
             configElement.dataset.placementKey
             ?? 'video_player';
 
+        this.configuredPrefetchFormats =
+            this.parsePrefetchFormats(
+                configElement.dataset.prefetchFormats
+                ?? ''
+            );
+
         this.requestTimeoutMs = 8000;
+
+        /*
+         * Pending decisions intentionally live only
+         * for a short period in this page instance.
+         *
+         * A stale decision must never remain available
+         * indefinitely for a later ad trigger.
+         */
+        this.pendingDecisionTtlMs =
+            60 * 1000;
+
+        this.pendingDecisions =
+            new Map();
+
+        this.decisionRequests =
+            new Map();
 
         this.lastInteractionAt = 0;
 
@@ -188,17 +210,19 @@ class XurvexaMonetizationClient {
         format,
         options = {}
     ) {
+        const context =
+            this.resolveDecisionContext(
+                options
+            );
+
         const payload = {
             format,
             video_id:
-                options.videoId ??
-                this.videoId,
+                context.videoId,
             is_mobile:
-                options.isMobile ??
-                this.isMobile(),
+                context.isMobile,
             placement_key:
-                options.placementKey ??
-                this.defaultPlacementKey,
+                context.placementKey,
         };
 
         const response = await this.postJson(
@@ -207,6 +231,321 @@ class XurvexaMonetizationClient {
         );
 
         return response?.decision ?? null;
+    }
+
+    async prefetchDecision(
+        format,
+        options = {}
+    ) {
+        this.assertFormat(
+            format
+        );
+
+        this.clearExpiredPendingDecisions();
+
+        const context =
+            this.resolveDecisionContext(
+                options
+            );
+
+        const key =
+            this.decisionKey(
+                format,
+                context
+            );
+
+        const existing =
+            this.pendingDecisions.get(
+                key
+            );
+
+        if (
+            existing &&
+            !this.isPendingDecisionExpired(
+                existing
+            )
+        ) {
+            return existing.decision;
+        }
+
+        const existingRequest =
+            this.decisionRequests.get(
+                key
+            );
+
+        if (existingRequest) {
+            return existingRequest;
+        }
+
+        const request =
+            this.fetchAndStoreDecision(
+                format,
+                context,
+                key
+            );
+
+        this.decisionRequests.set(
+            key,
+            request
+        );
+
+        try {
+            return await request;
+        } finally {
+            this.decisionRequests.delete(
+                key
+            );
+        }
+    }
+
+    async fetchAndStoreDecision(
+        format,
+        context,
+        key
+    ) {
+        const decision =
+            await this.decide(
+                format,
+                {
+                    videoId:
+                        context.videoId,
+
+                    isMobile:
+                        context.isMobile,
+
+                    placementKey:
+                        context.placementKey,
+                }
+            );
+
+        this.pendingDecisions.delete(
+            key
+        );
+
+        if (
+            !decision ||
+            decision.show !== true
+        ) {
+            this.dispatchDecisionEvent(
+                'xurvexa:monetization-decision-skipped',
+                {
+                    format,
+                    decision,
+                    context,
+                }
+            );
+
+            return decision;
+        }
+
+        this.assertDecision(
+            decision
+        );
+
+        const storedAt =
+            Date.now();
+
+        const pending = {
+            decision,
+            context,
+            storedAt,
+            expiresAt:
+                storedAt +
+                this.pendingDecisionTtlMs,
+        };
+
+        this.pendingDecisions.set(
+            key,
+            pending
+        );
+
+        this.dispatchDecisionEvent(
+            'xurvexa:monetization-decision-ready',
+            {
+                format,
+                decision,
+                context,
+                expiresAt:
+                    pending.expiresAt,
+            }
+        );
+
+        return decision;
+    }
+
+    async prefetchConfiguredDecisions() {
+        if (
+            this.configuredPrefetchFormats.length
+            === 0
+        ) {
+            return [];
+        }
+
+        const results =
+            await Promise.allSettled(
+                this.configuredPrefetchFormats.map(
+                    (format) =>
+                        this.prefetchDecision(
+                            format
+                        )
+                )
+            );
+
+        return results;
+    }
+
+    peekPendingDecision(
+        format,
+        options = {}
+    ) {
+        this.assertFormat(
+            format
+        );
+
+        this.clearExpiredPendingDecisions();
+
+        const context =
+            this.resolveDecisionContext(
+                options
+            );
+
+        const key =
+            this.decisionKey(
+                format,
+                context
+            );
+
+        const pending =
+            this.pendingDecisions.get(
+                key
+            );
+
+        if (!pending) {
+            return null;
+        }
+
+        return pending.decision;
+    }
+
+    consumePendingDecision(
+        format,
+        options = {}
+    ) {
+        this.assertFormat(
+            format
+        );
+
+        this.clearExpiredPendingDecisions();
+
+        const context =
+            this.resolveDecisionContext(
+                options
+            );
+
+        const key =
+            this.decisionKey(
+                format,
+                context
+            );
+
+        const pending =
+            this.pendingDecisions.get(
+                key
+            );
+
+        if (!pending) {
+            return null;
+        }
+
+        this.pendingDecisions.delete(
+            key
+        );
+
+        this.dispatchDecisionEvent(
+            'xurvexa:monetization-decision-consumed',
+            {
+                format,
+                decision:
+                    pending.decision,
+                context:
+                    pending.context,
+            }
+        );
+
+        return pending.decision;
+    }
+
+    discardPendingDecision(
+        format,
+        options = {}
+    ) {
+        this.assertFormat(
+            format
+        );
+
+        const context =
+            this.resolveDecisionContext(
+                options
+            );
+
+        const key =
+            this.decisionKey(
+                format,
+                context
+            );
+
+        return this.pendingDecisions.delete(
+            key
+        );
+    }
+
+    clearExpiredPendingDecisions() {
+        const now =
+            Date.now();
+
+        for (
+            const [
+                key,
+                pending,
+            ]
+            of this.pendingDecisions.entries()
+        ) {
+            if (
+                pending.expiresAt <= now
+            ) {
+                this.pendingDecisions.delete(
+                    key
+                );
+
+                this.dispatchDecisionEvent(
+                    'xurvexa:monetization-decision-expired',
+                    {
+                        decision:
+                            pending.decision,
+                        context:
+                            pending.context,
+                    }
+                );
+            }
+        }
+    }
+
+    hasPendingDecision(
+        format,
+        options = {}
+    ) {
+        return (
+            this.peekPendingDecision(
+                format,
+                options
+            ) !== null
+        );
+    }
+
+    pendingDecisionCount() {
+        this.clearExpiredPendingDecisions();
+
+        return this.pendingDecisions.size;
     }
 
     async recordImpression(
@@ -287,20 +626,29 @@ class XurvexaMonetizationClient {
             decision
         );
 
+        const context =
+            this.resolveDecisionContext(
+                options
+            );
+
         const payload = {
-            event_type: eventType,
-            format: decision.format,
+            event_type:
+                eventType,
+
+            format:
+                decision.format,
+
             opportunity_uuid:
                 decision.opportunity_uuid,
+
             video_id:
-                options.videoId ??
-                this.videoId,
+                context.videoId,
+
             is_mobile:
-                options.isMobile ??
-                this.isMobile(),
+                context.isMobile,
+
             placement_key:
-                options.placementKey ??
-                this.defaultPlacementKey,
+                context.placementKey,
         };
 
         if (
@@ -466,6 +814,79 @@ class XurvexaMonetizationClient {
         return error;
     }
 
+    resolveDecisionContext(
+        options = {}
+    ) {
+        return {
+            videoId:
+                options.videoId ??
+                this.videoId,
+
+            isMobile:
+                options.isMobile ??
+                this.isMobile(),
+
+            placementKey:
+                options.placementKey ??
+                this.defaultPlacementKey,
+        };
+    }
+
+    decisionKey(
+        format,
+        context
+    ) {
+        const videoPart =
+            context.videoId === null ||
+            context.videoId === undefined
+                ? 'none'
+                : String(
+                    context.videoId
+                );
+
+        const devicePart =
+            context.isMobile
+                ? 'mobile'
+                : 'desktop';
+
+        const placementPart =
+            context.placementKey ??
+            'none';
+
+        return [
+            format,
+            videoPart,
+            devicePart,
+            placementPart,
+        ].join('|');
+    }
+
+    isPendingDecisionExpired(
+        pending
+    ) {
+        return (
+            !pending ||
+            typeof pending.expiresAt
+                !== 'number' ||
+            pending.expiresAt <=
+                Date.now()
+        );
+    }
+
+    dispatchDecisionEvent(
+        eventName,
+        detail
+    ) {
+        window.dispatchEvent(
+            new CustomEvent(
+                eventName,
+                {
+                    detail,
+                }
+            )
+        );
+    }
+
     assertDecision(
         decision
     ) {
@@ -496,6 +917,67 @@ class XurvexaMonetizationClient {
                 'Decision opportunity UUID is missing.'
             );
         }
+    }
+
+    assertFormat(
+        format
+    ) {
+        const supportedFormats = [
+            'native',
+            'banner',
+            'preroll',
+            'midroll',
+            'popunder',
+            'interstitial',
+        ];
+
+        if (
+            typeof format !== 'string' ||
+            !supportedFormats.includes(
+                format
+            )
+        ) {
+            throw new Error(
+                'Unsupported monetization format.'
+            );
+        }
+    }
+
+    parsePrefetchFormats(
+        value
+    ) {
+        if (
+            typeof value !== 'string' ||
+            value.trim() === ''
+        ) {
+            return [];
+        }
+
+        const supportedFormats = [
+            'native',
+            'banner',
+            'preroll',
+            'midroll',
+            'popunder',
+            'interstitial',
+        ];
+
+        return [
+            ...new Set(
+                value
+                    .split(',')
+                    .map(
+                        (format) =>
+                            format.trim()
+                    )
+                    .filter(
+                        (format) =>
+                            supportedFormats.includes(
+                                format
+                            )
+                    )
+            ),
+        ];
     }
 
     parseVideoId(
@@ -560,6 +1042,15 @@ function bootXurvexaMonetization() {
             }
         )
     );
+
+    client
+        .prefetchConfiguredDecisions()
+        .catch(() => {
+            /*
+             * Decision prefetch failures must
+             * never affect page usability.
+             */
+        });
 }
 
 if (

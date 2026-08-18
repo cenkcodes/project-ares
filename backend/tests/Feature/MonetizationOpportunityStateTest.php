@@ -2,11 +2,17 @@
 
 use App\Models\AdEvent;
 use App\Services\Monetization\MonetizationOpportunityState;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
 
 beforeEach(function () {
     app('session')->flush();
+
+    CarbonImmutable::setTestNow();
+});
+
+afterEach(function () {
+    CarbonImmutable::setTestNow();
 });
 
 function makeOpportunityState(): MonetizationOpportunityState
@@ -325,7 +331,7 @@ test(
                 )
         )->toThrow(
             InvalidArgumentException::class,
-            'Unknown monetization opportunity.'
+            'Unknown or expired monetization opportunity.'
         );
     }
 );
@@ -479,6 +485,192 @@ test(
             InvalidArgumentException::class,
             'Monetization opportunity device mismatch.'
         );
+    }
+);
+
+test(
+    'opportunity remains valid before sixty second ttl expires',
+    function () {
+        $startedAt =
+            CarbonImmutable::parse(
+                '2026-08-18 10:00:00 UTC'
+            );
+
+        CarbonImmutable::setTestNow(
+            $startedAt
+        );
+
+        $state = makeOpportunityState();
+
+        $decision =
+            makeOpportunityDecision();
+
+        $state->rememberDecision(
+            decision: $decision,
+            videoId: 123,
+            placementKey: 'video_player',
+            isMobile: false
+        );
+
+        CarbonImmutable::setTestNow(
+            $startedAt->addSeconds(59)
+        );
+
+        $opportunity =
+            $state->opportunity(
+                $decision[
+                    'opportunity_uuid'
+                ]
+            );
+
+        expect($state->count())
+            ->toBe(1)
+            ->and($opportunity)
+            ->not->toBeNull();
+
+        $claimed =
+            $state->claimEvent(
+                opportunityUuid:
+                    $decision[
+                        'opportunity_uuid'
+                    ],
+                eventType:
+                    AdEvent::EVENT_IMPRESSION,
+                format:
+                    AdEvent::FORMAT_POPUNDER,
+                videoId: 123,
+                placementKey:
+                    'video_player',
+                isMobile: false
+            );
+
+        expect(
+            $claimed[
+                'claimed_events'
+            ]
+        )->toBe([
+            AdEvent::EVENT_IMPRESSION,
+        ]);
+    }
+);
+
+test(
+    'opportunity expires exactly at sixty seconds',
+    function () {
+        $startedAt =
+            CarbonImmutable::parse(
+                '2026-08-18 10:00:00 UTC'
+            );
+
+        CarbonImmutable::setTestNow(
+            $startedAt
+        );
+
+        $state = makeOpportunityState();
+
+        $decision =
+            makeOpportunityDecision();
+
+        $state->rememberDecision(
+            decision: $decision,
+            videoId: 123,
+            placementKey: 'video_player',
+            isMobile: false
+        );
+
+        expect($state->count())
+            ->toBe(1);
+
+        CarbonImmutable::setTestNow(
+            $startedAt->addSeconds(
+                MonetizationOpportunityState::OPPORTUNITY_TTL_SECONDS
+            )
+        );
+
+        expect(
+            $state->opportunity(
+                $decision[
+                    'opportunity_uuid'
+                ]
+            )
+        )
+            ->toBeNull()
+            ->and($state->count())
+            ->toBe(0);
+
+        expect(
+            fn () =>
+                $state->claimEvent(
+                    opportunityUuid:
+                        $decision[
+                            'opportunity_uuid'
+                        ],
+                    eventType:
+                        AdEvent::EVENT_IMPRESSION,
+                    format:
+                        AdEvent::FORMAT_POPUNDER,
+                    videoId: 123,
+                    placementKey:
+                        'video_player',
+                    isMobile: false
+                )
+        )->toThrow(
+            InvalidArgumentException::class,
+            'Unknown or expired monetization opportunity.'
+        );
+    }
+);
+
+test(
+    'invalid stored opportunity timestamp fails closed and is removed',
+    function () {
+        $uuid =
+            (string) Str::uuid();
+
+        app('session')->put(
+            'monetization.opportunities',
+            [
+                $uuid => [
+                    'opportunity_uuid' =>
+                        $uuid,
+
+                    'format' =>
+                        AdEvent::FORMAT_POPUNDER,
+
+                    'video_id' =>
+                        123,
+
+                    'placement_key' =>
+                        'video_player',
+
+                    'is_mobile' =>
+                        false,
+
+                    'claimed_events' =>
+                        [],
+
+                    'created_at' =>
+                        'not-a-valid-timestamp',
+                ],
+            ]
+        );
+
+        $state = makeOpportunityState();
+
+        expect(
+            $state->opportunity(
+                $uuid
+            )
+        )
+            ->toBeNull()
+            ->and($state->count())
+            ->toBe(0);
+
+        expect(
+            app('session')->get(
+                'monetization.opportunities'
+            )
+        )->toBe([]);
     }
 );
 
