@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AdEvent;
 use App\Models\Video;
+use App\Services\Monetization\MonetizationOpportunityState;
 use App\Services\Monetization\TrackedAdDecisionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class MonetizationRuntimeController extends Controller
 {
@@ -26,7 +28,8 @@ class MonetizationRuntimeController extends Controller
 
     public function decision(
         Request $request,
-        TrackedAdDecisionService $monetization
+        TrackedAdDecisionService $monetization,
+        MonetizationOpportunityState $opportunityState
     ): JsonResponse {
         $validated = $request->validate([
             'format' => [
@@ -109,6 +112,13 @@ class MonetizationRuntimeController extends Controller
                 ),
         };
 
+        $opportunityState->rememberDecision(
+            decision: $decision,
+            videoId: $video?->id,
+            placementKey: $placementKey,
+            isMobile: $isMobile
+        );
+
         return response()->json([
             'ok' => true,
             'decision' => $decision,
@@ -117,7 +127,8 @@ class MonetizationRuntimeController extends Controller
 
     public function event(
         Request $request,
-        TrackedAdDecisionService $monetization
+        TrackedAdDecisionService $monetization,
+        MonetizationOpportunityState $opportunityState
     ): JsonResponse {
         $this->rejectClientControlledCommercialFields(
             $request
@@ -173,12 +184,38 @@ class MonetizationRuntimeController extends Controller
 
         $format = $validated['format'];
         $eventType = $validated['event_type'];
+
         $opportunityUuid =
             $validated['opportunity_uuid'];
+
         $isMobile =
             (bool) $validated['is_mobile'];
+
         $placementKey =
             $validated['placement_key'] ?? null;
+
+        $this->claimOpportunityEvent(
+            opportunityState:
+                $opportunityState,
+
+            opportunityUuid:
+                $opportunityUuid,
+
+            eventType:
+                $eventType,
+
+            format:
+                $format,
+
+            videoId:
+                $video?->id,
+
+            placementKey:
+                $placementKey,
+
+            isMobile:
+                $isMobile
+        );
 
         $event = match ($eventType) {
             AdEvent::EVENT_IMPRESSION =>
@@ -245,6 +282,44 @@ class MonetizationRuntimeController extends Controller
             'tracked' => $event !== null,
             'event_uuid' => $event?->event_uuid,
         ]);
+    }
+
+    private function claimOpportunityEvent(
+        MonetizationOpportunityState $opportunityState,
+        string $opportunityUuid,
+        string $eventType,
+        string $format,
+        ?int $videoId,
+        ?string $placementKey,
+        bool $isMobile
+    ): void {
+        try {
+            $opportunityState->claimEvent(
+                opportunityUuid:
+                    $opportunityUuid,
+
+                eventType:
+                    $eventType,
+
+                format:
+                    $format,
+
+                videoId:
+                    $videoId,
+
+                placementKey:
+                    $placementKey,
+
+                isMobile:
+                    $isMobile
+            );
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'opportunity_uuid' => [
+                    $exception->getMessage(),
+                ],
+            ]);
+        }
     }
 
     private function resolveVideo(

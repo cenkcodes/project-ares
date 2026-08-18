@@ -217,6 +217,9 @@ test(
             ->assertJsonPath(
                 'decision.reason',
                 'eligible'
+            )
+            ->assertSessionHas(
+                'monetization.opportunities'
             );
 
         $opportunityUuid =
@@ -345,6 +348,9 @@ test(
             )
             ->assertCookie(
                 AnonymousVisitorIdentity::COOKIE_NAME
+            )
+            ->assertSessionHas(
+                'monetization.opportunities'
             );
 
         expect(
@@ -358,24 +364,58 @@ test(
 );
 
 test(
-    'impression endpoint updates session protection state',
+    'skipped decision is not accepted as an event opportunity',
     function () {
         createRuntimeControllerSettings();
 
-        createRuntimeControllerProvider();
+        createRuntimeControllerProvider(
+            slug: 'xvideos',
+            hasOwnAds: true
+        );
 
         $video =
-            createRuntimeControllerVideo();
+            createRuntimeControllerVideo(
+                'xvideos'
+            );
+
+        $decisionResponse =
+            $this->postJson(
+                route(
+                    'monetization.decision'
+                ),
+                [
+                    'format' =>
+                        AdEvent::FORMAT_PREROLL,
+
+                    'video_id' =>
+                        $video->id,
+
+                    'is_mobile' =>
+                        false,
+
+                    'placement_key' =>
+                        'video_player',
+                ]
+            );
+
+        $decisionResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'decision.show',
+                false
+            )
+            ->assertJsonPath(
+                'decision.reason',
+                'provider_has_own_ads'
+            );
 
         $opportunityUuid =
-            (string) Str::uuid();
+            $decisionResponse->json(
+                'decision.opportunity_uuid'
+            );
 
-        $response = $this
-            ->withSession([
-                'monetization.meaningful_interactions' =>
-                    2,
-            ])
-            ->postJson(
+        $eventResponse =
+            $this->postJson(
                 route(
                     'monetization.event'
                 ),
@@ -384,7 +424,7 @@ test(
                         AdEvent::EVENT_IMPRESSION,
 
                     'format' =>
-                        AdEvent::FORMAT_POPUNDER,
+                        AdEvent::FORMAT_PREROLL,
 
                     'opportunity_uuid' =>
                         $opportunityUuid,
@@ -399,6 +439,95 @@ test(
                         'video_player',
                 ]
             );
+
+        $eventResponse
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'opportunity_uuid',
+            ]);
+
+        expect(
+            AdEvent::query()
+                ->where(
+                    'event_type',
+                    AdEvent::EVENT_IMPRESSION
+                )
+                ->count()
+        )->toBe(0);
+    }
+);
+
+test(
+    'issued popunder opportunity can record impression and update protection state',
+    function () {
+        createRuntimeControllerSettings();
+
+        createRuntimeControllerProvider();
+
+        $video =
+            createRuntimeControllerVideo();
+
+        $decisionResponse =
+            $this
+                ->withSession([
+                    'monetization.meaningful_interactions' =>
+                        2,
+                ])
+                ->postJson(
+                    route(
+                        'monetization.decision'
+                    ),
+                    [
+                        'format' =>
+                            AdEvent::FORMAT_POPUNDER,
+
+                        'video_id' =>
+                            $video->id,
+
+                        'is_mobile' =>
+                            false,
+
+                        'placement_key' =>
+                            'video_player',
+                    ]
+                );
+
+        $decisionResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'decision.show',
+                true
+            );
+
+        $opportunityUuid =
+            $decisionResponse->json(
+                'decision.opportunity_uuid'
+            );
+
+        $response = $this->postJson(
+            route(
+                'monetization.event'
+            ),
+            [
+                'event_type' =>
+                    AdEvent::EVENT_IMPRESSION,
+
+                'format' =>
+                    AdEvent::FORMAT_POPUNDER,
+
+                'opportunity_uuid' =>
+                    $opportunityUuid,
+
+                'video_id' =>
+                    $video->id,
+
+                'is_mobile' =>
+                    false,
+
+                'placement_key' =>
+                    'video_player',
+            ]
+        );
 
         $response
             ->assertOk()
@@ -431,13 +560,13 @@ test(
         )->toBeTrue();
 
         $event = AdEvent::query()
-            ->sole();
-
-        expect($event->event_type)
-            ->toBe(
+            ->where(
+                'event_type',
                 AdEvent::EVENT_IMPRESSION
             )
-            ->and($event->format)
+            ->sole();
+
+        expect($event->format)
             ->toBe(
                 AdEvent::FORMAT_POPUNDER
             )
@@ -451,11 +580,15 @@ test(
                 $event->interruption_cost
             )
             ->toBe(1);
+
+        expect(
+            AdEvent::count()
+        )->toBe(2);
     }
 );
 
 test(
-    'tracking disabled still applies impression protection state',
+    'tracking disabled still applies protection for a valid issued opportunity',
     function () {
         createRuntimeControllerSettings(
             trackingEnabled: false
@@ -466,35 +599,71 @@ test(
         $video =
             createRuntimeControllerVideo();
 
-        $response = $this
-            ->withSession([
-                'monetization.meaningful_interactions' =>
-                    2,
-            ])
-            ->postJson(
-                route(
-                    'monetization.event'
-                ),
-                [
-                    'event_type' =>
-                        AdEvent::EVENT_IMPRESSION,
+        $decisionResponse =
+            $this
+                ->withSession([
+                    'monetization.meaningful_interactions' =>
+                        2,
+                ])
+                ->postJson(
+                    route(
+                        'monetization.decision'
+                    ),
+                    [
+                        'format' =>
+                            AdEvent::FORMAT_POPUNDER,
 
-                    'format' =>
-                        AdEvent::FORMAT_POPUNDER,
+                        'video_id' =>
+                            $video->id,
 
-                    'opportunity_uuid' =>
-                        (string) Str::uuid(),
+                        'is_mobile' =>
+                            false,
 
-                    'video_id' =>
-                        $video->id,
+                        'placement_key' =>
+                            'video_player',
+                    ]
+                );
 
-                    'is_mobile' =>
-                        false,
-
-                    'placement_key' =>
-                        'video_player',
-                ]
+        $decisionResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'decision.show',
+                true
             );
+
+        expect(
+            AdEvent::count()
+        )->toBe(0);
+
+        $opportunityUuid =
+            $decisionResponse->json(
+                'decision.opportunity_uuid'
+            );
+
+        $response = $this->postJson(
+            route(
+                'monetization.event'
+            ),
+            [
+                'event_type' =>
+                    AdEvent::EVENT_IMPRESSION,
+
+                'format' =>
+                    AdEvent::FORMAT_POPUNDER,
+
+                'opportunity_uuid' =>
+                    $opportunityUuid,
+
+                'video_id' =>
+                    $video->id,
+
+                'is_mobile' =>
+                    false,
+
+                'placement_key' =>
+                    'video_player',
+            ]
+        );
 
         $response
             ->assertOk()
@@ -522,6 +691,386 @@ test(
         expect(
             AdEvent::count()
         )->toBe(0);
+    }
+);
+
+test(
+    'unknown opportunity uuid is rejected before event recording',
+    function () {
+        createRuntimeControllerSettings();
+
+        $response =
+            $this->postJson(
+                route(
+                    'monetization.event'
+                ),
+                [
+                    'event_type' =>
+                        AdEvent::EVENT_IMPRESSION,
+
+                    'format' =>
+                        AdEvent::FORMAT_BANNER,
+
+                    'opportunity_uuid' =>
+                        (string) Str::uuid(),
+
+                    'is_mobile' =>
+                        false,
+
+                    'placement_key' =>
+                        'video_sidebar',
+                ]
+            );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'opportunity_uuid',
+            ]);
+
+        expect(
+            AdEvent::count()
+        )->toBe(0);
+    }
+);
+
+test(
+    'opportunity context mismatch is rejected',
+    function () {
+        createRuntimeControllerSettings();
+
+        createRuntimeControllerProvider();
+
+        $video =
+            createRuntimeControllerVideo();
+
+        $decisionResponse =
+            $this->postJson(
+                route(
+                    'monetization.decision'
+                ),
+                [
+                    'format' =>
+                        AdEvent::FORMAT_BANNER,
+
+                    'video_id' =>
+                        $video->id,
+
+                    'is_mobile' =>
+                        false,
+
+                    'placement_key' =>
+                        'video_sidebar',
+                ]
+            );
+
+        $decisionResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'decision.show',
+                true
+            );
+
+        $opportunityUuid =
+            $decisionResponse->json(
+                'decision.opportunity_uuid'
+            );
+
+        $response =
+            $this->postJson(
+                route(
+                    'monetization.event'
+                ),
+                [
+                    'event_type' =>
+                        AdEvent::EVENT_IMPRESSION,
+
+                    'format' =>
+                        AdEvent::FORMAT_BANNER,
+
+                    'opportunity_uuid' =>
+                        $opportunityUuid,
+
+                    'video_id' =>
+                        $video->id,
+
+                    'is_mobile' =>
+                        false,
+
+                    'placement_key' =>
+                        'different_placement',
+                ]
+            );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'opportunity_uuid',
+            ]);
+
+        expect(
+            AdEvent::query()
+                ->where(
+                    'event_type',
+                    AdEvent::EVENT_IMPRESSION
+                )
+                ->count()
+        )->toBe(0)
+            ->and(
+                AdEvent::query()
+                    ->where(
+                        'event_type',
+                        AdEvent::EVENT_DECISION
+                    )
+                    ->count()
+            )
+            ->toBe(1);
+    }
+);
+
+test(
+    'duplicate impression replay is rejected without consuming state twice',
+    function () {
+        createRuntimeControllerSettings();
+
+        createRuntimeControllerProvider();
+
+        $video =
+            createRuntimeControllerVideo();
+
+        $decisionResponse =
+            $this
+                ->withSession([
+                    'monetization.meaningful_interactions' =>
+                        2,
+                ])
+                ->postJson(
+                    route(
+                        'monetization.decision'
+                    ),
+                    [
+                        'format' =>
+                            AdEvent::FORMAT_POPUNDER,
+
+                        'video_id' =>
+                            $video->id,
+
+                        'is_mobile' =>
+                            false,
+
+                        'placement_key' =>
+                            'video_player',
+                    ]
+                );
+
+        $decisionResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'decision.show',
+                true
+            );
+
+        $opportunityUuid =
+            $decisionResponse->json(
+                'decision.opportunity_uuid'
+            );
+
+        $payload = [
+            'event_type' =>
+                AdEvent::EVENT_IMPRESSION,
+
+            'format' =>
+                AdEvent::FORMAT_POPUNDER,
+
+            'opportunity_uuid' =>
+                $opportunityUuid,
+
+            'video_id' =>
+                $video->id,
+
+            'is_mobile' =>
+                false,
+
+            'placement_key' =>
+                'video_player',
+        ];
+
+        $firstResponse =
+            $this->postJson(
+                route(
+                    'monetization.event'
+                ),
+                $payload
+            );
+
+        $firstResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'tracked',
+                true
+            )
+            ->assertSessionHas(
+                'monetization.popunder_count',
+                1
+            )
+            ->assertSessionHas(
+                'monetization.interruption_budget_consumed',
+                1
+            );
+
+        $secondResponse =
+            $this->postJson(
+                route(
+                    'monetization.event'
+                ),
+                $payload
+            );
+
+        $secondResponse
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'opportunity_uuid',
+            ])
+            ->assertSessionHas(
+                'monetization.popunder_count',
+                1
+            )
+            ->assertSessionHas(
+                'monetization.interruption_budget_consumed',
+                1
+            );
+
+        expect(
+            AdEvent::query()
+                ->where(
+                    'event_type',
+                    AdEvent::EVENT_IMPRESSION
+                )
+                ->count()
+        )->toBe(1)
+            ->and(
+                AdEvent::count()
+            )
+            ->toBe(2);
+    }
+);
+
+test(
+    'different event types may use the same issued opportunity',
+    function () {
+        createRuntimeControllerSettings();
+
+        createRuntimeControllerProvider();
+
+        $video =
+            createRuntimeControllerVideo();
+
+        $decisionResponse =
+            $this->postJson(
+                route(
+                    'monetization.decision'
+                ),
+                [
+                    'format' =>
+                        AdEvent::FORMAT_BANNER,
+
+                    'video_id' =>
+                        $video->id,
+
+                    'is_mobile' =>
+                        false,
+
+                    'placement_key' =>
+                        'video_sidebar',
+                ]
+            );
+
+        $decisionResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'decision.show',
+                true
+            );
+
+        $opportunityUuid =
+            $decisionResponse->json(
+                'decision.opportunity_uuid'
+            );
+
+        $impressionResponse =
+            $this->postJson(
+                route(
+                    'monetization.event'
+                ),
+                [
+                    'event_type' =>
+                        AdEvent::EVENT_IMPRESSION,
+
+                    'format' =>
+                        AdEvent::FORMAT_BANNER,
+
+                    'opportunity_uuid' =>
+                        $opportunityUuid,
+
+                    'video_id' =>
+                        $video->id,
+
+                    'is_mobile' =>
+                        false,
+
+                    'placement_key' =>
+                        'video_sidebar',
+                ]
+            );
+
+        $clickResponse =
+            $this->postJson(
+                route(
+                    'monetization.event'
+                ),
+                [
+                    'event_type' =>
+                        AdEvent::EVENT_CLICK,
+
+                    'format' =>
+                        AdEvent::FORMAT_BANNER,
+
+                    'opportunity_uuid' =>
+                        $opportunityUuid,
+
+                    'video_id' =>
+                        $video->id,
+
+                    'is_mobile' =>
+                        false,
+
+                    'placement_key' =>
+                        'video_sidebar',
+                ]
+            );
+
+        $impressionResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'tracked',
+                true
+            );
+
+        $clickResponse
+            ->assertOk()
+            ->assertJsonPath(
+                'tracked',
+                true
+            );
+
+        expect(
+            AdEvent::query()
+                ->where(
+                    'opportunity_uuid',
+                    $opportunityUuid
+                )
+                ->count()
+        )->toBe(3);
     }
 );
 
