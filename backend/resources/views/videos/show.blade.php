@@ -94,6 +94,40 @@
         border: 0;
     }
 
+    .video-ad-slot {
+        display: none;
+
+        width: 100%;
+
+        margin-top: 18px;
+
+        min-height: 0;
+
+        overflow: hidden;
+    }
+
+    .video-ad-slot[data-enabled="true"] {
+        display: block;
+    }
+
+    .video-ad-slot[data-ad-state="disabled"],
+    .video-ad-slot[data-ad-state="skipped"],
+    .video-ad-slot[data-ad-state="unsupported"],
+    .video-ad-slot[data-ad-state="expired"],
+    .video-ad-slot[data-ad-state="discarded"],
+    .video-ad-slot[data-ad-state="error"] {
+        display: none;
+    }
+
+    .video-ad-slot[data-ad-state="ready"],
+    .video-ad-slot[data-ad-state="requesting"] {
+        visibility: hidden;
+    }
+
+    .video-ad-slot[data-ad-state="rendered"] {
+        visibility: visible;
+    }
+
     .video-info {
         padding:
             22px 0 0;
@@ -290,6 +324,18 @@
     </div>
 
 
+    <div
+        class="video-ad-slot"
+        data-xurvexa-ad-slot
+        data-enabled="false"
+        data-format="banner"
+        data-placement-key="video_banner"
+        data-ad-state="idle"
+        aria-hidden="true"
+    >
+    </div>
+
+
     <div class="video-info">
 
         <h1 class="title">
@@ -452,6 +498,9 @@
 </main>
 
 
-@vite('resources/js/video-monetization.js')
+@vite([
+    'resources/js/video-monetization.js',
+    'resources/js/video-adapter.js',
+])
 
 @endsection

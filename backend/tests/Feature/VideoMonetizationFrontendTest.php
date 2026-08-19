@@ -185,3 +185,93 @@ test(
             );
     }
 );
+
+test(
+    'video detail page renders disabled banner ad slot',
+    function () {
+        $video =
+            createVideoMonetizationFrontendVideo();
+
+        $response = $this->get(
+            route(
+                'videos.show',
+                $video->slug
+            )
+        );
+
+        $response
+            ->assertOk()
+            ->assertSee(
+                'data-xurvexa-ad-slot',
+                false
+            )
+            ->assertSee(
+                'data-enabled="false"',
+                false
+            )
+            ->assertSee(
+                'data-format="banner"',
+                false
+            )
+            ->assertSee(
+                'data-placement-key="video_banner"',
+                false
+            )
+            ->assertSee(
+                'data-ad-state="idle"',
+                false
+            )
+            ->assertSee(
+                'aria-hidden="true"',
+                false
+            );
+    }
+);
+
+test(
+    'video detail page loads video ad adapter vite entry',
+    function () {
+        $video =
+            createVideoMonetizationFrontendVideo();
+
+        $response = $this->get(
+            route(
+                'videos.show',
+                $video->slug
+            )
+        );
+
+        $response
+            ->assertOk()
+            ->assertSee(
+                'video-adapter',
+                false
+            );
+    }
+);
+
+test(
+    'video detail page does not enable automatic ad prefetch yet',
+    function () {
+        $video =
+            createVideoMonetizationFrontendVideo();
+
+        $response = $this->get(
+            route(
+                'videos.show',
+                $video->slug
+            )
+        );
+
+        $response
+            ->assertOk()
+            ->assertDontSee(
+                'data-prefetch-formats=',
+                false
+            )
+            ->assertSee(
+                'data-enabled="false"',
+                false
+            );
+    }
+);
