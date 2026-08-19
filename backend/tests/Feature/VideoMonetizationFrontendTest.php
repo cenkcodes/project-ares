@@ -259,6 +259,28 @@ test(
 );
 
 test(
+    'video detail page loads banner renderer vite entry',
+    function () {
+        $video =
+            createVideoMonetizationFrontendVideo();
+
+        $response = $this->get(
+            route(
+                'videos.show',
+                $video->slug
+            )
+        );
+
+        $response
+            ->assertOk()
+            ->assertSee(
+                'video-banner-renderer',
+                false
+            );
+    }
+);
+
+test(
     'video detail page does not enable automatic ad prefetch yet',
     function () {
         $video =
@@ -279,6 +301,36 @@ test(
             )
             ->assertSee(
                 'data-enabled="false"',
+                false
+            );
+    }
+);
+
+test(
+    'video detail page does not expose local test banner driver',
+    function () {
+        $video =
+            createVideoMonetizationFrontendVideo();
+
+        $response = $this->get(
+            route(
+                'videos.show',
+                $video->slug
+            )
+        );
+
+        $response
+            ->assertOk()
+            ->assertDontSee(
+                'video-banner-test-driver',
+                false
+            )
+            ->assertDontSee(
+                'data-ad-renderer=',
+                false
+            )
+            ->assertDontSee(
+                'data-xurvexa-test-banner',
                 false
             );
     }

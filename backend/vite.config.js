@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/js/video-monetization.js',
                 'resources/js/video-adapter.js',
+                'resources/js/video-banner-renderer.js',
             ],
             refresh: true,
         }),

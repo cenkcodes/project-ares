@@ -124,6 +124,7 @@
         visibility: hidden;
     }
 
+    .video-ad-slot[data-ad-state="rendering"],
     .video-ad-slot[data-ad-state="rendered"] {
         visibility: visible;
     }
@@ -501,6 +502,7 @@
 @vite([
     'resources/js/video-monetization.js',
     'resources/js/video-adapter.js',
+    'resources/js/video-banner-renderer.js',
 ])
 
 @endsection
