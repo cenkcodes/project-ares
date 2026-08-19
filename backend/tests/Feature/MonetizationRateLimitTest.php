@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RequireAdultConsent;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
@@ -7,6 +8,13 @@ beforeEach(function () {
     Cache::flush();
 
     app('session')->flush();
+
+    $this
+        ->withCredentials()
+        ->withCookie(
+            RequireAdultConsent::COOKIE_NAME,
+            RequireAdultConsent::COOKIE_VALUE
+        );
 });
 
 test(
@@ -38,6 +46,9 @@ test(
                     $route->gatherMiddleware()
                 )
                 ->toContain('web')
+                ->toContain(
+                    RequireAdultConsent::class
+                )
                 ->toContain(
                     $middleware
                 );

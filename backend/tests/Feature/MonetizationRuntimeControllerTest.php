@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RequireAdultConsent;
 use App\Models\AdEvent;
 use App\Models\MonetizationSetting;
 use App\Models\Video;
@@ -18,6 +19,13 @@ beforeEach(function () {
     Cookie::flushQueuedCookies();
 
     app('session')->flush();
+
+    $this
+        ->withCredentials()
+        ->withCookie(
+            RequireAdultConsent::COOKIE_NAME,
+            RequireAdultConsent::COOKIE_VALUE
+        );
 });
 
 function createRuntimeControllerSettings(
@@ -140,7 +148,10 @@ test(
                 ->and($route->methods())
                 ->toContain('POST')
                 ->and($route->gatherMiddleware())
-                ->toContain('web');
+                ->toContain('web')
+                ->toContain(
+                    RequireAdultConsent::class
+                );
         }
     }
 );

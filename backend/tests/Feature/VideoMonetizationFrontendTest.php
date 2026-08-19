@@ -1,10 +1,18 @@
 <?php
 
+use App\Http\Middleware\RequireAdultConsent;
 use App\Models\Video;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->withCookie(
+        RequireAdultConsent::COOKIE_NAME,
+        RequireAdultConsent::COOKIE_VALUE
+    );
+});
 
 function createVideoMonetizationFrontendVideo(): Video
 {

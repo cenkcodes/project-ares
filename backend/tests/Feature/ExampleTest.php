@@ -1,7 +1,13 @@
 <?php
 
-it('returns a successful response', function () {
-    $response = $this->get('/');
+it(
+    'redirects first time visitor to age verification',
+    function () {
+        $response =
+            $this->get('/');
 
-    $response->assertStatus(200);
-});
+        $response->assertRedirect(
+            route('age-gate.show')
+        );
+    }
+);
