@@ -7,6 +7,25 @@ use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
     Cache::flush();
+
+    /*
+     * Frequency-state tests use explicit
+     * August 18-19, 2026 timestamps.
+     *
+     * Freeze the application clock so cache
+     * expirations remain deterministic and
+     * do not depend on the real calendar day
+     * on which the test suite is executed.
+     */
+    CarbonImmutable::setTestNow(
+        CarbonImmutable::parse(
+            '2026-08-18 00:00:00 UTC'
+        )
+    );
+});
+
+afterEach(function () {
+    CarbonImmutable::setTestNow();
 });
 
 function makeMonetizationFrequencyStateForTest(): MonetizationFrequencyState

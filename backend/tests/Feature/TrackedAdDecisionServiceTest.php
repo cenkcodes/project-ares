@@ -24,6 +24,22 @@ beforeEach(function () {
     Cookie::flushQueuedCookies();
 
     app('session')->flush();
+
+    /*
+     * These tests use explicit August 18, 2026
+     * impression timestamps. Freeze the application
+     * clock so cache expiration remains deterministic
+     * regardless of the real day the suite is run.
+     */
+    CarbonImmutable::setTestNow(
+        CarbonImmutable::parse(
+            '2026-08-18 00:00:00 UTC'
+        )
+    );
+});
+
+afterEach(function () {
+    CarbonImmutable::setTestNow();
 });
 
 function createStateAwareTrackedSettings(

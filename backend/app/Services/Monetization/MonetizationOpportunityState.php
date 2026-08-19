@@ -164,6 +164,12 @@ class MonetizationOpportunityState
                 'claimed_events'
             ] ?? [];
 
+        if (! is_array($claimedEvents)) {
+            throw new InvalidArgumentException(
+                'Invalid monetization opportunity event state.'
+            );
+        }
+
         if (
             in_array(
                 $eventType,
@@ -175,6 +181,15 @@ class MonetizationOpportunityState
                 'This monetization event has already been claimed.'
             );
         }
+
+        $this->assertLifecycleAllowsEvent(
+            format:
+                $format,
+            eventType:
+                $eventType,
+            claimedEvents:
+                $claimedEvents
+        );
 
         $claimedEvents[] =
             $eventType;
@@ -328,6 +343,148 @@ class MonetizationOpportunityState
             self::SESSION_KEY,
             $opportunities
         );
+    }
+
+    private function assertLifecycleAllowsEvent(
+        string $format,
+        string $eventType,
+        array $claimedEvents
+    ): void {
+        $this->assertNoTerminalEventClaimed(
+            $claimedEvents
+        );
+
+        if (
+            $eventType ===
+            AdEvent::EVENT_IMPRESSION
+        ) {
+            if ($claimedEvents !== []) {
+                throw new InvalidArgumentException(
+                    'Impression must be the first monetization event.'
+                );
+            }
+
+            return;
+        }
+
+        if (
+            $eventType ===
+            AdEvent::EVENT_ERROR
+        ) {
+            return;
+        }
+
+        $hasImpression =
+            in_array(
+                AdEvent::EVENT_IMPRESSION,
+                $claimedEvents,
+                true
+            );
+
+        if (! $hasImpression) {
+            throw new InvalidArgumentException(
+                'Monetization event requires a prior impression.'
+            );
+        }
+
+        if (
+            $eventType ===
+            AdEvent::EVENT_CLICK
+        ) {
+            return;
+        }
+
+        if (
+            $eventType ===
+            AdEvent::EVENT_SKIP
+        ) {
+            $this->assertSkipSupported(
+                $format
+            );
+
+            return;
+        }
+
+        if (
+            $eventType ===
+            AdEvent::EVENT_CLOSE
+        ) {
+            $this->assertCloseSupported(
+                $format
+            );
+
+            return;
+        }
+
+        throw new InvalidArgumentException(
+            'Invalid monetization event lifecycle transition.'
+        );
+    }
+
+    private function assertNoTerminalEventClaimed(
+        array $claimedEvents
+    ): void {
+        $terminalEvents = [
+            AdEvent::EVENT_SKIP,
+            AdEvent::EVENT_CLOSE,
+            AdEvent::EVENT_ERROR,
+        ];
+
+        foreach (
+            $terminalEvents
+            as $terminalEvent
+        ) {
+            if (
+                in_array(
+                    $terminalEvent,
+                    $claimedEvents,
+                    true
+                )
+            ) {
+                throw new InvalidArgumentException(
+                    'Monetization opportunity lifecycle is already complete.'
+                );
+            }
+        }
+    }
+
+    private function assertSkipSupported(
+        string $format
+    ): void {
+        if (
+            ! in_array(
+                $format,
+                [
+                    AdEvent::FORMAT_PREROLL,
+                    AdEvent::FORMAT_MIDROLL,
+                ],
+                true
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Skip event is not supported for this monetization format.'
+            );
+        }
+    }
+
+    private function assertCloseSupported(
+        string $format
+    ): void {
+        if (
+            ! in_array(
+                $format,
+                [
+                    AdEvent::FORMAT_PREROLL,
+                    AdEvent::FORMAT_MIDROLL,
+                    AdEvent::FORMAT_INTERSTITIAL,
+                ],
+                true
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Close event is not supported for this monetization format.'
+            );
+        }
     }
 
     private function assertContextMatches(
