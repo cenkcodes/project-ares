@@ -112,11 +112,28 @@ class MonetizationRuntimeController extends Controller
                 ),
         };
 
+        $commercialContext =
+            $this->commercialContextFromDecision(
+                $decision
+            );
+
         $opportunityState->rememberDecision(
             decision: $decision,
             videoId: $video?->id,
             placementKey: $placementKey,
-            isMobile: $isMobile
+            isMobile: $isMobile,
+            adNetwork:
+                $commercialContext[
+                    'ad_network'
+                ],
+            adPlacementId:
+                $commercialContext[
+                    'ad_placement_id'
+                ],
+            adDriver:
+                $commercialContext[
+                    'ad_driver'
+                ]
         );
 
         return response()->json([
@@ -194,28 +211,60 @@ class MonetizationRuntimeController extends Controller
         $placementKey =
             $validated['placement_key'] ?? null;
 
-        $this->claimOpportunityEvent(
-            opportunityState:
-                $opportunityState,
+        $opportunity =
+            $this->claimOpportunityEvent(
+                opportunityState:
+                    $opportunityState,
 
-            opportunityUuid:
-                $opportunityUuid,
+                opportunityUuid:
+                    $opportunityUuid,
 
-            eventType:
-                $eventType,
+                eventType:
+                    $eventType,
 
-            format:
-                $format,
+                format:
+                    $format,
 
-            videoId:
-                $video?->id,
+                videoId:
+                    $video?->id,
 
-            placementKey:
-                $placementKey,
+                placementKey:
+                    $placementKey,
 
-            isMobile:
-                $isMobile
-        );
+                isMobile:
+                    $isMobile
+            );
+
+        $adNetwork =
+            $this->trustedOpportunityString(
+                opportunity:
+                    $opportunity,
+                key:
+                    'ad_network'
+            );
+
+        $adDriver =
+            $this->trustedOpportunityString(
+                opportunity:
+                    $opportunity,
+                key:
+                    'ad_driver'
+            );
+
+        $adPlacementId =
+            $this->trustedOpportunityPositiveInt(
+                opportunity:
+                    $opportunity,
+                key:
+                    'ad_placement_id'
+            );
+
+        $commercialMetadata = [
+            'ad_placement_id' =>
+                $adPlacementId,
+            'ad_driver' =>
+                $adDriver,
+        ];
 
         $event = match ($eventType) {
             AdEvent::EVENT_IMPRESSION =>
@@ -229,7 +278,11 @@ class MonetizationRuntimeController extends Controller
                     interruptionCost:
                         $this->interruptionCost(
                             $format
-                        )
+                        ),
+                    adNetwork:
+                        $adNetwork,
+                    metadata:
+                        $commercialMetadata
                 ),
 
             AdEvent::EVENT_CLICK =>
@@ -239,7 +292,11 @@ class MonetizationRuntimeController extends Controller
                     opportunityUuid:
                         $opportunityUuid,
                     isMobile: $isMobile,
-                    placementKey: $placementKey
+                    placementKey: $placementKey,
+                    adNetwork:
+                        $adNetwork,
+                    metadata:
+                        $commercialMetadata
                 ),
 
             AdEvent::EVENT_SKIP =>
@@ -249,7 +306,11 @@ class MonetizationRuntimeController extends Controller
                     opportunityUuid:
                         $opportunityUuid,
                     isMobile: $isMobile,
-                    placementKey: $placementKey
+                    placementKey: $placementKey,
+                    adNetwork:
+                        $adNetwork,
+                    metadata:
+                        $commercialMetadata
                 ),
 
             AdEvent::EVENT_CLOSE =>
@@ -259,7 +320,11 @@ class MonetizationRuntimeController extends Controller
                     opportunityUuid:
                         $opportunityUuid,
                     isMobile: $isMobile,
-                    placementKey: $placementKey
+                    placementKey: $placementKey,
+                    adNetwork:
+                        $adNetwork,
+                    metadata:
+                        $commercialMetadata
                 ),
 
             AdEvent::EVENT_ERROR =>
@@ -273,7 +338,11 @@ class MonetizationRuntimeController extends Controller
                     opportunityUuid:
                         $opportunityUuid,
                     isMobile: $isMobile,
-                    placementKey: $placementKey
+                    placementKey: $placementKey,
+                    adNetwork:
+                        $adNetwork,
+                    metadata:
+                        $commercialMetadata
                 ),
         };
 
@@ -292,9 +361,9 @@ class MonetizationRuntimeController extends Controller
         ?int $videoId,
         ?string $placementKey,
         bool $isMobile
-    ): void {
+    ): array {
         try {
-            $opportunityState->claimEvent(
+            return $opportunityState->claimEvent(
                 opportunityUuid:
                     $opportunityUuid,
 
@@ -376,6 +445,127 @@ class MonetizationRuntimeController extends Controller
             : 0;
     }
 
+    /**
+     * Read commercial delivery context only from the
+     * server-created decision response.
+     */
+    private function commercialContextFromDecision(
+        array $decision
+    ): array {
+        if (
+            ($decision['show'] ?? false)
+            !== true
+        ) {
+            return [
+                'ad_network' => null,
+                'ad_placement_id' => null,
+                'ad_driver' => null,
+            ];
+        }
+
+        $delivery =
+            $decision['delivery']
+            ?? null;
+
+        if (! is_array($delivery)) {
+            throw new InvalidArgumentException(
+                'Eligible monetization decision is missing delivery context.'
+            );
+        }
+
+        $adNetwork =
+            $delivery['ad_network']
+            ?? null;
+
+        $adPlacementId =
+            $delivery['ad_placement_id']
+            ?? null;
+
+        $adDriver =
+            $delivery['ad_driver']
+            ?? null;
+
+        if (
+            ! is_string($adNetwork)
+            || trim($adNetwork) === ''
+            || strlen(trim($adNetwork)) > 64
+            || ! is_int($adPlacementId)
+            || $adPlacementId < 1
+            || ! is_string($adDriver)
+            || trim($adDriver) === ''
+            || strlen(trim($adDriver)) > 64
+        ) {
+            throw new InvalidArgumentException(
+                'Eligible monetization decision has invalid delivery context.'
+            );
+        }
+
+        return [
+            'ad_network' =>
+                trim($adNetwork),
+            'ad_placement_id' =>
+                $adPlacementId,
+            'ad_driver' =>
+                trim($adDriver),
+        ];
+    }
+
+    private function trustedOpportunityString(
+        array $opportunity,
+        string $key
+    ): ?string {
+        $value =
+            $opportunity[$key]
+            ?? null;
+
+        if ($value === null) {
+            return null;
+        }
+
+        if (! is_string($value)) {
+            throw new InvalidArgumentException(
+                'Invalid monetization opportunity commercial state.'
+            );
+        }
+
+        $value = trim($value);
+
+        if (
+            $value === ''
+            || strlen($value) > 64
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid monetization opportunity commercial state.'
+            );
+        }
+
+        return $value;
+    }
+
+    private function trustedOpportunityPositiveInt(
+        array $opportunity,
+        string $key
+    ): ?int {
+        $value =
+            $opportunity[$key]
+            ?? null;
+
+        if ($value === null) {
+            return null;
+        }
+
+        if (
+            ! is_int($value)
+            || $value < 1
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid monetization opportunity commercial state.'
+            );
+        }
+
+        return $value;
+    }
+
     private function rejectClientControlledCommercialFields(
         Request $request
     ): void {
@@ -383,6 +573,8 @@ class MonetizationRuntimeController extends Controller
             'revenue_micros',
             'currency',
             'ad_network',
+            'ad_placement_id',
+            'ad_driver',
             'campaign_key',
             'interruption_cost',
         ];

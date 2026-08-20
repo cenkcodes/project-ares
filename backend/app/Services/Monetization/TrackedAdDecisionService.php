@@ -20,6 +20,7 @@ class TrackedAdDecisionService
         private readonly MonetizationSessionState $sessionState,
         private readonly MonetizationFrequencyState $frequencyState,
         private readonly AnonymousVisitorIdentity $visitorIdentity,
+        private readonly AdPlacementSelector $placementSelector,
         private readonly Request $request
     ) {
     }
@@ -61,6 +62,13 @@ class TrackedAdDecisionService
                 isMobile: $isMobile
             );
 
+        $decision =
+            $this->applyPlacementSelection(
+                decision: $decision,
+                placementKey: $placementKey,
+                isMobile: $isMobile
+            );
+
         return $this->trackDecision(
             decision: $decision,
             video: $video,
@@ -81,6 +89,13 @@ class TrackedAdDecisionService
         $decision = $this->decisionEngine
             ->decideBanner(
                 provider: $provider,
+                isMobile: $isMobile
+            );
+
+        $decision =
+            $this->applyPlacementSelection(
+                decision: $decision,
+                placementKey: $placementKey,
                 isMobile: $isMobile
             );
 
@@ -137,6 +152,13 @@ class TrackedAdDecisionService
                 now: $now
             );
 
+        $decision =
+            $this->applyPlacementSelection(
+                decision: $decision,
+                placementKey: $placementKey,
+                isMobile: $isMobile
+            );
+
         return $this->trackDecision(
             decision: $decision,
             video: $video,
@@ -166,6 +188,13 @@ class TrackedAdDecisionService
         $decision = $this->decisionEngine
             ->decideMidroll(
                 provider: $provider,
+                isMobile: $isMobile
+            );
+
+        $decision =
+            $this->applyPlacementSelection(
+                decision: $decision,
+                placementKey: $placementKey,
                 isMobile: $isMobile
             );
 
@@ -225,6 +254,13 @@ class TrackedAdDecisionService
                 now: $now
             );
 
+        $decision =
+            $this->applyPlacementSelection(
+                decision: $decision,
+                placementKey: $placementKey,
+                isMobile: $isMobile
+            );
+
         return $this->trackDecision(
             decision: $decision,
             video: $video,
@@ -274,6 +310,13 @@ class TrackedAdDecisionService
                             $visitorKey
                         ),
                 now: $now
+            );
+
+        $decision =
+            $this->applyPlacementSelection(
+                decision: $decision,
+                placementKey: $placementKey,
+                isMobile: $isMobile
             );
 
         return $this->trackDecision(
@@ -601,6 +644,183 @@ class TrackedAdDecisionService
         );
     }
 
+    /**
+     * Apply the trusted network/placement delivery layer
+     * after policy eligibility but before decision tracking.
+     *
+     * A policy-eligible decision must also have a real,
+     * active and compatible placement. Missing delivery
+     * configuration fails closed.
+     */
+    private function applyPlacementSelection(
+        array $decision,
+        ?string $placementKey,
+        bool $isMobile
+    ): array {
+        if (
+            ($decision['show'] ?? false)
+            !== true
+        ) {
+            return $decision;
+        }
+
+        $format =
+            $decision['format']
+            ?? null;
+
+        $this->validateFormat(
+            is_string($format)
+                ? $format
+                : ''
+        );
+
+        if (
+            $placementKey === null
+            || trim($placementKey) === ''
+        ) {
+            return $this->skipForPlacement(
+                decision: $decision,
+                reason:
+                    'missing_ad_placement_key'
+            );
+        }
+
+        $normalizedPlacementKey =
+            trim($placementKey);
+
+        $placement =
+            $this->placementSelector
+                ->select(
+                    placementKey:
+                        $normalizedPlacementKey,
+                    format:
+                        $format,
+                    isMobile:
+                        $isMobile
+                );
+
+        if ($placement === null) {
+            return $this->skipForPlacement(
+                decision: $decision,
+                reason:
+                    'no_eligible_ad_placement'
+            );
+        }
+
+        $network =
+            $placement->network;
+
+        if ($network === null) {
+            return $this->skipForPlacement(
+                decision: $decision,
+                reason:
+                    'no_eligible_ad_network'
+            );
+        }
+
+        $publicConfiguration =
+            $placement
+                ->publicRuntimeConfiguration();
+
+        $metadata =
+            $decision['metadata']
+            ?? [];
+
+        if (! is_array($metadata)) {
+            $metadata = [];
+        }
+
+        $decision['metadata'] =
+            array_merge(
+                $metadata,
+                [
+                    'ad_network' =>
+                        $network->slug,
+
+                    'ad_placement_id' =>
+                        $placement->id,
+
+                    'ad_driver' =>
+                        $network->driver,
+                ]
+            );
+
+        /*
+         * Browser-safe delivery configuration.
+         *
+         * No API secret, private token or arbitrary
+         * executable script URL is exposed here.
+         */
+        $decision['delivery'] = [
+            'ad_network' =>
+                $network->slug,
+
+            'ad_placement_id' =>
+                $placement->id,
+
+            'ad_driver' =>
+                $network->driver,
+
+            'public_placement_id' =>
+                $publicConfiguration[
+                    'public_placement_id'
+                ] ?? null,
+
+            'public_config' =>
+                $publicConfiguration[
+                    'public_config'
+                ] ?? [],
+        ];
+
+        return $decision;
+    }
+
+    /**
+     * Convert a policy-eligible decision into a
+     * fail-closed delivery skip while preserving
+     * the original policy reason for analytics.
+     */
+    private function skipForPlacement(
+        array $decision,
+        string $reason
+    ): array {
+        $metadata =
+            $decision['metadata']
+            ?? [];
+
+        if (! is_array($metadata)) {
+            $metadata = [];
+        }
+
+        $originalReason =
+            $decision['reason']
+            ?? null;
+
+        if (
+            is_string($originalReason)
+            && $originalReason !== ''
+        ) {
+            $metadata[
+                'policy_reason'
+            ] = $originalReason;
+        }
+
+        $decision['show'] =
+            false;
+
+        $decision['reason'] =
+            $reason;
+
+        $decision['metadata'] =
+            $metadata;
+
+        unset(
+            $decision['delivery']
+        );
+
+        return $decision;
+    }
+
     private function trackDecision(
         array $decision,
         ?Video $video,
@@ -610,6 +830,11 @@ class TrackedAdDecisionService
         $opportunityUuid =
             $this->eventRecorder
                 ->newOpportunityUuid();
+
+        $adNetwork =
+            $this->trustedAdNetworkFromDecision(
+                $decision
+            );
 
         $this->eventRecorder
             ->recordDecision(
@@ -625,13 +850,54 @@ class TrackedAdDecisionService
                 deviceType:
                     $this->deviceType(
                         $isMobile
-                    )
+                    ),
+                adNetwork:
+                    $adNetwork
             );
 
         $decision['opportunity_uuid'] =
             $opportunityUuid;
 
         return $decision;
+    }
+
+    /**
+     * Read ad network only from trusted server-created
+     * delivery context.
+     *
+     * A malformed delivery block fails closed by
+     * returning no network attribution.
+     */
+    private function trustedAdNetworkFromDecision(
+        array $decision
+    ): ?string {
+        $delivery =
+            $decision['delivery']
+            ?? null;
+
+        if (! is_array($delivery)) {
+            return null;
+        }
+
+        $adNetwork =
+            $delivery['ad_network']
+            ?? null;
+
+        if (! is_string($adNetwork)) {
+            return null;
+        }
+
+        $adNetwork =
+            trim($adNetwork);
+
+        if (
+            $adNetwork === ''
+            || strlen($adNetwork) > 64
+        ) {
+            return null;
+        }
+
+        return $adNetwork;
     }
 
     private function visitorKey(): string

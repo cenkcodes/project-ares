@@ -29,7 +29,10 @@ class MonetizationOpportunityState
         array $decision,
         ?int $videoId,
         ?string $placementKey,
-        bool $isMobile
+        bool $isMobile,
+        ?string $adNetwork = null,
+        ?int $adPlacementId = null,
+        ?string $adDriver = null
     ): void {
         if (
             ($decision['show'] ?? false)
@@ -52,6 +55,12 @@ class MonetizationOpportunityState
 
         $this->validateFormat(
             $format
+        );
+
+        $this->validateCommercialContext(
+            adNetwork: $adNetwork,
+            adPlacementId: $adPlacementId,
+            adDriver: $adDriver
         );
 
         $opportunities =
@@ -80,6 +89,25 @@ class MonetizationOpportunityState
 
             'is_mobile' =>
                 $isMobile,
+
+            /*
+             * Server-controlled commercial context.
+             *
+             * These values are never accepted from
+             * the browser event payload.
+             *
+             * They are attached by the server after
+             * a trusted ad placement/network selection
+             * has been made.
+             */
+            'ad_network' =>
+                $adNetwork,
+
+            'ad_placement_id' =>
+                $adPlacementId,
+
+            'ad_driver' =>
+                $adDriver,
 
             'claimed_events' =>
                 [],
@@ -527,6 +555,67 @@ class MonetizationOpportunityState
         ) {
             throw new InvalidArgumentException(
                 'Monetization opportunity device mismatch.'
+            );
+        }
+    }
+
+    /**
+     * Validate trusted server-side commercial context.
+     *
+     * All three values must either be absent or present
+     * together. Partial state fails closed.
+     */
+    private function validateCommercialContext(
+        ?string $adNetwork,
+        ?int $adPlacementId,
+        ?string $adDriver
+    ): void {
+        $allAbsent =
+            $adNetwork === null
+            && $adPlacementId === null
+            && $adDriver === null;
+
+        if ($allAbsent) {
+            return;
+        }
+
+        if (
+            $adNetwork === null
+            || $adPlacementId === null
+            || $adDriver === null
+        ) {
+            throw new InvalidArgumentException(
+                'Incomplete monetization commercial context.'
+            );
+        }
+
+        $normalizedNetwork =
+            trim($adNetwork);
+
+        if (
+            $normalizedNetwork === ''
+            || strlen($normalizedNetwork) > 64
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid monetization ad network.'
+            );
+        }
+
+        if ($adPlacementId < 1) {
+            throw new InvalidArgumentException(
+                'Invalid monetization ad placement.'
+            );
+        }
+
+        $normalizedDriver =
+            trim($adDriver);
+
+        if (
+            $normalizedDriver === ''
+            || strlen($normalizedDriver) > 64
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid monetization ad driver.'
             );
         }
     }

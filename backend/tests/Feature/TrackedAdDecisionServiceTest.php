@@ -1,11 +1,14 @@
 <?php
 
 use App\Models\AdEvent;
+use App\Models\AdNetwork;
+use App\Models\AdPlacement;
 use App\Models\MonetizationSetting;
 use App\Models\Video;
 use App\Models\VideoProvider;
 use App\Services\Monetization\AdDecisionEngine;
 use App\Services\Monetization\AdEventRecorder;
+use App\Services\Monetization\AdPlacementSelector;
 use App\Services\Monetization\AnonymousVisitorIdentity;
 use App\Services\Monetization\MonetizationFrequencyState;
 use App\Services\Monetization\MonetizationSessionState;
@@ -24,6 +27,8 @@ beforeEach(function () {
     Cookie::flushQueuedCookies();
 
     app('session')->flush();
+
+    createStateAwareTrackedAdDeliveryFixtures();
 
     /*
      * These tests use explicit August 18, 2026
@@ -89,6 +94,86 @@ function createStateAwareTrackedSettings(
         'ad_event_tracking_enabled' =>
             $trackingEnabled,
     ]);
+}
+
+function createStateAwareTrackedAdDeliveryFixtures(): void
+{
+    $network = AdNetwork::create([
+        'name' =>
+            'State Aware Test Network',
+
+        'slug' =>
+            'state-aware-test-network',
+
+        'driver' =>
+            'state-aware-test-driver',
+
+        'is_active' => true,
+        'priority' => 100,
+
+        'supports_native' => true,
+        'supports_banner' => true,
+        'supports_preroll' => true,
+        'supports_midroll' => true,
+        'supports_popunder' => true,
+        'supports_interstitial' => true,
+    ]);
+
+    $placements = [
+        [
+            'placement_key' =>
+                'video_sidebar',
+            'format' =>
+                AdNetwork::FORMAT_BANNER,
+            'public_placement_id' =>
+                'test-banner-zone',
+        ],
+        [
+            'placement_key' =>
+                'video_player',
+            'format' =>
+                AdNetwork::FORMAT_POPUNDER,
+            'public_placement_id' =>
+                'test-popunder-zone',
+        ],
+        [
+            'placement_key' =>
+                'home_grid',
+            'format' =>
+                AdNetwork::FORMAT_NATIVE,
+            'public_placement_id' =>
+                'test-native-zone',
+        ],
+    ];
+
+    foreach ($placements as $placement) {
+        AdPlacement::create([
+            'ad_network_id' =>
+                $network->id,
+
+            'placement_key' =>
+                $placement[
+                    'placement_key'
+                ],
+
+            'format' =>
+                $placement[
+                    'format'
+                ],
+
+            'is_active' => true,
+            'priority' => 100,
+            'desktop_enabled' => true,
+            'mobile_enabled' => true,
+
+            'public_placement_id' =>
+                $placement[
+                    'public_placement_id'
+                ],
+
+            'public_config' => [],
+        ]);
+    }
 }
 
 function createStateAwareTrackedProvider(
@@ -167,6 +252,9 @@ function makeStateAwareTrackedService(
 
         visitorIdentity:
             app(AnonymousVisitorIdentity::class),
+
+        placementSelector:
+            app(AdPlacementSelector::class),
 
         request:
             $request

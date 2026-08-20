@@ -23,6 +23,7 @@ class AdEventRecorder
         ?string $placementKey = null,
         ?string $sessionKey = null,
         ?string $deviceType = null,
+        ?string $adNetwork = null,
         array $metadata = [],
         ?CarbonInterface $occurredAt = null
     ): ?AdEvent {
@@ -53,6 +54,7 @@ class AdEventRecorder
                 : AdEvent::OUTCOME_SKIP,
             'decision_reason' => $decision['reason'] ?? null,
             'placement_key' => $placementKey,
+            'ad_network' => $adNetwork,
             'session_key' => $sessionKey,
             'device_type' => $deviceType,
             'metadata' => array_merge(

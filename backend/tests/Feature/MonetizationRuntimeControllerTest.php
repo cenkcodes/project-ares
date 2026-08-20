@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\RequireAdultConsent;
 use App\Models\AdEvent;
+use App\Models\AdNetwork;
+use App\Models\AdPlacement;
 use App\Models\MonetizationSetting;
 use App\Models\Video;
 use App\Models\VideoProvider;
@@ -20,6 +22,8 @@ beforeEach(function () {
 
     app('session')->flush();
 
+    createRuntimeControllerAdDeliveryFixtures();
+
     $this
         ->withCredentials()
         ->withCookie(
@@ -27,6 +31,77 @@ beforeEach(function () {
             RequireAdultConsent::COOKIE_VALUE
         );
 });
+
+function createRuntimeControllerAdDeliveryFixtures(): AdNetwork
+{
+    $network = AdNetwork::create([
+        'name' =>
+            'Runtime Test Network',
+
+        'slug' =>
+            'runtime-test-network',
+
+        'driver' =>
+            'runtime-test-driver',
+
+        'is_active' => true,
+        'priority' => 10,
+
+        'supports_native' => false,
+        'supports_banner' => true,
+        'supports_preroll' => false,
+        'supports_midroll' => false,
+        'supports_popunder' => true,
+        'supports_interstitial' => false,
+    ]);
+
+    AdPlacement::create([
+        'ad_network_id' =>
+            $network->id,
+
+        'placement_key' =>
+            'video_sidebar',
+
+        'format' =>
+            AdNetwork::FORMAT_BANNER,
+
+        'is_active' => true,
+        'priority' => 10,
+        'desktop_enabled' => true,
+        'mobile_enabled' => true,
+
+        'public_placement_id' =>
+            'runtime-banner-zone',
+
+        'public_config' => [
+            'width' => 728,
+            'height' => 90,
+        ],
+    ]);
+
+    AdPlacement::create([
+        'ad_network_id' =>
+            $network->id,
+
+        'placement_key' =>
+            'video_player',
+
+        'format' =>
+            AdNetwork::FORMAT_POPUNDER,
+
+        'is_active' => true,
+        'priority' => 10,
+        'desktop_enabled' => true,
+        'mobile_enabled' => true,
+
+        'public_placement_id' =>
+            'runtime-popunder-zone',
+
+        'public_config' => [],
+    ]);
+
+    return $network;
+}
 
 function createRuntimeControllerSettings(
     bool $trackingEnabled = true
@@ -229,6 +304,18 @@ test(
                 'decision.reason',
                 'eligible'
             )
+            ->assertJsonPath(
+                'decision.delivery.ad_network',
+                'runtime-test-network'
+            )
+            ->assertJsonPath(
+                'decision.delivery.ad_driver',
+                'runtime-test-driver'
+            )
+            ->assertJsonPath(
+                'decision.delivery.public_placement_id',
+                'runtime-banner-zone'
+            )
             ->assertSessionHas(
                 'monetization.opportunities'
             );
@@ -264,6 +351,10 @@ test(
             ->and($event->placement_key)
             ->toBe(
                 'video_sidebar'
+            )
+            ->and($event->ad_network)
+            ->toBe(
+                'runtime-test-network'
             )
             ->and(
                 Str::isUuid(
@@ -356,6 +447,18 @@ test(
             ->assertJsonPath(
                 'decision.reason',
                 'eligible'
+            )
+            ->assertJsonPath(
+                'decision.delivery.ad_network',
+                'runtime-test-network'
+            )
+            ->assertJsonPath(
+                'decision.delivery.ad_driver',
+                'runtime-test-driver'
+            )
+            ->assertJsonPath(
+                'decision.delivery.public_placement_id',
+                'runtime-popunder-zone'
             )
             ->assertCookie(
                 AnonymousVisitorIdentity::COOKIE_NAME
@@ -590,7 +693,28 @@ test(
             ->and(
                 $event->interruption_cost
             )
-            ->toBe(1);
+            ->toBe(1)
+            ->and(
+                $event->ad_network
+            )
+            ->toBe(
+                'runtime-test-network'
+            )
+            ->and(
+                $event->metadata[
+                    'ad_driver'
+                ] ?? null
+            )
+            ->toBe(
+                'runtime-test-driver'
+            )
+            ->and(
+                $event->metadata[
+                    'ad_placement_id'
+                ] ?? null
+            )
+            ->toBeInt()
+            ->toBeGreaterThan(0);
 
         expect(
             AdEvent::count()
@@ -1176,6 +1300,16 @@ test(
     'ad network' => [
         'ad_network',
         'fake-network',
+    ],
+
+    'ad placement id' => [
+        'ad_placement_id',
+        999,
+    ],
+
+    'ad driver' => [
+        'ad_driver',
+        'fake-driver',
     ],
 
     'campaign key' => [
