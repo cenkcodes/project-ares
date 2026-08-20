@@ -47,6 +47,15 @@ class XurvexaVideoAdAdapter {
             slot
         );
 
+        /*
+         * Renderer selection is always rebuilt from the
+         * trusted server-created decision. Never keep a
+         * stale or markup-provided renderer selection.
+         */
+        this.clearRendererSelection(
+            slot
+        );
+
         if (!this.isSlotEnabled(slot)) {
             this.setSlotState(
                 slot,
@@ -113,12 +122,57 @@ class XurvexaVideoAdAdapter {
             return decision;
         }
 
+        let delivery;
+
+        try {
+            delivery =
+                this.trustedDelivery(
+                    decision
+                );
+        } catch (error) {
+            /*
+             * The server opportunity may still exist, but
+             * a malformed browser delivery contract must
+             * never reach a renderer. Drop the local
+             * prefetched decision and fail closed.
+             */
+            this.client
+                .discardPendingDecision(
+                    format,
+                    context
+                );
+
+            this.setSlotState(
+                slot,
+                'error'
+            );
+
+            this.dispatchSlotEvent(
+                'xurvexa:ad-slot-invalid-delivery',
+                slot,
+                {
+                    format,
+                    decision,
+                    context,
+                    error,
+                }
+            );
+
+            throw error;
+        }
+
+        this.applyRendererSelection(
+            slot,
+            delivery.adDriver
+        );
+
         this.pendingSlots.set(
             slot,
             {
                 format,
                 context,
                 decision,
+                delivery,
             }
         );
 
@@ -134,6 +188,7 @@ class XurvexaVideoAdAdapter {
                 format,
                 decision,
                 context,
+                delivery,
             }
         );
 
@@ -164,6 +219,30 @@ class XurvexaVideoAdAdapter {
             ?? null;
     }
 
+    pendingDelivery(
+        slot
+    ) {
+        const pending =
+            this.pendingSlots.get(
+                slot
+            );
+
+        return pending?.delivery
+            ?? null;
+    }
+
+    activeDelivery(
+        slot
+    ) {
+        const active =
+            this.activeSlots.get(
+                slot
+            );
+
+        return active?.delivery
+            ?? null;
+    }
+
     async confirmRendered(
         slot
     ) {
@@ -191,6 +270,10 @@ class XurvexaVideoAdAdapter {
 
         if (!decision) {
             this.pendingSlots.delete(
+                slot
+            );
+
+            this.clearRendererSelection(
                 slot
             );
 
@@ -229,6 +312,9 @@ class XurvexaVideoAdAdapter {
                     pending.context,
 
                 decision,
+
+                delivery:
+                    pending.delivery,
             }
         );
 
@@ -248,6 +334,9 @@ class XurvexaVideoAdAdapter {
 
                 context:
                     pending.context,
+
+                delivery:
+                    pending.delivery,
             }
         );
 
@@ -291,6 +380,9 @@ class XurvexaVideoAdAdapter {
 
                 context:
                     active.context,
+
+                delivery:
+                    active.delivery,
             }
         );
 
@@ -332,6 +424,10 @@ class XurvexaVideoAdAdapter {
                 slot
             );
 
+            this.clearRendererSelection(
+                slot
+            );
+
             this.setSlotState(
                 slot,
                 'error'
@@ -359,6 +455,10 @@ class XurvexaVideoAdAdapter {
                 );
 
         this.pendingSlots.delete(
+            slot
+        );
+
+        this.clearRendererSelection(
             slot
         );
 
@@ -417,6 +517,10 @@ class XurvexaVideoAdAdapter {
             slot
         );
 
+        this.clearRendererSelection(
+            slot
+        );
+
         this.setSlotState(
             slot,
             'discarded'
@@ -457,6 +561,106 @@ class XurvexaVideoAdAdapter {
         };
     }
 
+    trustedDelivery(
+        decision
+    ) {
+        const delivery =
+            decision?.delivery;
+
+        if (
+            !delivery ||
+            typeof delivery !== 'object' ||
+            Array.isArray(delivery)
+        ) {
+            throw new Error(
+                'Trusted monetization delivery is missing.'
+            );
+        }
+
+        const adNetwork =
+            this.normalizeDeliveryIdentifier(
+                delivery.ad_network,
+                'ad network'
+            );
+
+        const adDriver =
+            this.normalizeDeliveryIdentifier(
+                delivery.ad_driver,
+                'ad driver'
+            );
+
+        const adPlacementId =
+            delivery.ad_placement_id;
+
+        if (
+            !Number.isInteger(
+                adPlacementId
+            ) ||
+            adPlacementId < 1
+        ) {
+            throw new Error(
+                'Trusted monetization ad placement ID is invalid.'
+            );
+        }
+
+        return {
+            adNetwork,
+            adPlacementId,
+            adDriver,
+
+            publicPlacementId:
+                delivery.public_placement_id
+                ?? null,
+
+            publicConfig:
+                delivery.public_config
+                ?? null,
+        };
+    }
+
+    normalizeDeliveryIdentifier(
+        value,
+        label
+    ) {
+        if (
+            typeof value !== 'string'
+        ) {
+            throw new Error(
+                `Trusted monetization ${label} is invalid.`
+            );
+        }
+
+        const normalized =
+            value
+                .trim()
+                .toLowerCase();
+
+        if (
+            !/^[a-z0-9][a-z0-9_-]{0,63}$/
+                .test(normalized)
+        ) {
+            throw new Error(
+                `Trusted monetization ${label} is invalid.`
+            );
+        }
+
+        return normalized;
+    }
+
+    applyRendererSelection(
+        slot,
+        driverName
+    ) {
+        slot.dataset.adRenderer =
+            driverName;
+    }
+
+    clearRendererSelection(
+        slot
+    ) {
+        delete slot.dataset.adRenderer;
+    }
+
     setSlotState(
         slot,
         state
@@ -469,6 +673,10 @@ class XurvexaVideoAdAdapter {
         slot,
         error
     ) {
+        this.clearRendererSelection(
+            slot
+        );
+
         this.setSlotState(
             slot,
             'error'

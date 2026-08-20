@@ -195,7 +195,7 @@ test(
 );
 
 test(
-    'video detail page renders disabled banner ad slot',
+    'video detail page renders enabled banner ad slot',
     function () {
         $video =
             createVideoMonetizationFrontendVideo();
@@ -214,7 +214,7 @@ test(
                 false
             )
             ->assertSee(
-                'data-enabled="false"',
+                'data-enabled="true"',
                 false
             )
             ->assertSee(
@@ -281,7 +281,7 @@ test(
 );
 
 test(
-    'video detail page does not enable automatic ad prefetch yet',
+    'video detail page does not expose monetization prefetch formats in markup',
     function () {
         $video =
             createVideoMonetizationFrontendVideo();
@@ -297,10 +297,6 @@ test(
             ->assertOk()
             ->assertDontSee(
                 'data-prefetch-formats=',
-                false
-            )
-            ->assertSee(
-                'data-enabled="false"',
                 false
             );
     }

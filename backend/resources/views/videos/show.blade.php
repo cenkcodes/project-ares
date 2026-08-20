@@ -328,7 +328,7 @@
     <div
         class="video-ad-slot"
         data-xurvexa-ad-slot
-        data-enabled="false"
+        data-enabled="true"
         data-format="banner"
         data-placement-key="video_banner"
         data-ad-state="idle"
