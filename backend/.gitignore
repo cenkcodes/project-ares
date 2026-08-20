@@ -9,15 +9,15 @@
 *.phpactor.json*
 *.phpunit.result.cache*
 
-*/.codex*
-*/.cursor/*
-*/.idea*
-*/.nova*
-*/.phpunit.cache*
-*/.vscode*
-*/.zed*
+.codex/
+.cursor/
+.idea/
+.nova/
+.phpunit.cache/
+.vscode/
+.zed/
 
-*/auth.json*
+auth.json
 
 /node_modules
 /public/build
