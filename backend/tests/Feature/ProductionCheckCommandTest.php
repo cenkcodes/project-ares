@@ -22,6 +22,12 @@ class ProductionCheckCommandTest extends TestCase
             'app.key' =>
                 'base64:test-production-key',
 
+            'mail.default' =>
+                'smtp',
+
+            'mail.from.address' =>
+                'no-reply@xurvexa.com',
+
             'database.default' =>
                 'pgsql',
 
@@ -68,6 +74,16 @@ class ProductionCheckCommandTest extends TestCase
             $output
         );
 
+        $this->assertStringContainsString(
+            'Mail transport',
+            $output
+        );
+
+        $this->assertStringContainsString(
+            'Mail from address',
+            $output
+        );
+
         $this->assertStringNotContainsString(
             'FAIL',
             $output
@@ -88,6 +104,12 @@ class ProductionCheckCommandTest extends TestCase
 
             'app.key' =>
                 null,
+
+            'mail.default' =>
+                'log',
+
+            'mail.from.address' =>
+                'hello@example.com',
 
             'database.default' =>
                 'sqlite',
@@ -132,6 +154,16 @@ class ProductionCheckCommandTest extends TestCase
 
         $this->assertStringContainsString(
             'FAIL',
+            $output
+        );
+
+        $this->assertStringContainsString(
+            'Mail transport',
+            $output
+        );
+
+        $this->assertStringContainsString(
+            'Mail from address',
             $output
         );
 
