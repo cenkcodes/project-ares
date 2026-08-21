@@ -55,6 +55,11 @@ class ProductionCheck extends Command
                 true
             );
 
+        $mailTransportConfiguration =
+            $this->inspectMailerConfiguration(
+                $mailMailer
+            );
+
         $mailFromAddress =
             strtolower(
                 trim(
@@ -173,6 +178,24 @@ class ProductionCheck extends Command
 
                 'passes' =>
                     $mailTransportIsProductionReady,
+            ],
+
+            [
+                'name' =>
+                    'Mail transport configuration',
+
+                'expected' =>
+                    'safe production delivery configuration',
+
+                'actual' =>
+                    $mailTransportConfiguration[
+                        'actual'
+                    ],
+
+                'passes' =>
+                    $mailTransportConfiguration[
+                        'passes'
+                    ],
             ],
 
             [
@@ -422,5 +445,391 @@ class ProductionCheck extends Command
         );
 
         return self::FAILURE;
+    }
+
+    /**
+     * Inspect the selected mailer and reject configurations that
+     * cannot represent a safe production delivery path.
+     *
+     * @param array<int, string> $visitedMailers
+     * @return array{passes: bool, actual: string}
+     */
+    private function inspectMailerConfiguration(
+        string $mailer,
+        array $visitedMailers = []
+    ): array {
+        $mailer =
+            strtolower(
+                trim($mailer)
+            );
+
+        if ($mailer === '') {
+            return [
+                'passes' => false,
+                'actual' => 'missing mailer',
+            ];
+        }
+
+        if (
+            in_array(
+                $mailer,
+                [
+                    'log',
+                    'array',
+                ],
+                true
+            )
+        ) {
+            return [
+                'passes' => false,
+                'actual' =>
+                    "{$mailer} is not a delivery transport",
+            ];
+        }
+
+        if (
+            in_array(
+                $mailer,
+                $visitedMailers,
+                true
+            )
+        ) {
+            return [
+                'passes' => false,
+                'actual' =>
+                    "circular mailer reference: {$mailer}",
+            ];
+        }
+
+        $mailerConfig =
+            config(
+                "mail.mailers.{$mailer}"
+            );
+
+        if (! is_array($mailerConfig)) {
+            return [
+                'passes' => false,
+                'actual' =>
+                    "mailer configuration missing: {$mailer}",
+            ];
+        }
+
+        $transport =
+            strtolower(
+                trim(
+                    (string) (
+                        $mailerConfig[
+                            'transport'
+                        ] ?? ''
+                    )
+                )
+            );
+
+        if ($transport === '') {
+            return [
+                'passes' => false,
+                'actual' =>
+                    "transport missing: {$mailer}",
+            ];
+        }
+
+        if (
+            in_array(
+                $transport,
+                [
+                    'log',
+                    'array',
+                ],
+                true
+            )
+        ) {
+            return [
+                'passes' => false,
+                'actual' =>
+                    "{$transport} is not a delivery transport",
+            ];
+        }
+
+        $visitedMailers[] =
+            $mailer;
+
+        if ($transport === 'smtp') {
+            return $this
+                ->inspectSmtpConfiguration(
+                    $mailerConfig
+                );
+        }
+
+        if (
+            in_array(
+                $transport,
+                [
+                    'failover',
+                    'roundrobin',
+                ],
+                true
+            )
+        ) {
+            $memberMailers =
+                $mailerConfig[
+                    'mailers'
+                ] ?? [];
+
+            if (
+                ! is_array(
+                    $memberMailers
+                ) ||
+                $memberMailers === []
+            ) {
+                return [
+                    'passes' => false,
+                    'actual' =>
+                        "{$transport} has no mailers",
+                ];
+            }
+
+            $memberNames = [];
+
+            foreach (
+                $memberMailers
+                as $memberMailer
+            ) {
+                $memberMailer =
+                    strtolower(
+                        trim(
+                            (string)
+                            $memberMailer
+                        )
+                    );
+
+                if ($memberMailer === '') {
+                    return [
+                        'passes' => false,
+                        'actual' =>
+                            "{$transport} contains an empty mailer",
+                    ];
+                }
+
+                $memberNames[] =
+                    $memberMailer;
+
+                $memberResult =
+                    $this
+                        ->inspectMailerConfiguration(
+                            $memberMailer,
+                            $visitedMailers
+                        );
+
+                if (
+                    ! $memberResult[
+                        'passes'
+                    ]
+                ) {
+                    return [
+                        'passes' => false,
+                        'actual' =>
+                            "{$transport} contains {$memberMailer}: " .
+                            $memberResult[
+                                'actual'
+                            ],
+                    ];
+                }
+            }
+
+            return [
+                'passes' => true,
+                'actual' =>
+                    "{$transport}: " .
+                    implode(
+                        ', ',
+                        $memberNames
+                    ),
+            ];
+        }
+
+        if ($transport === 'sendmail') {
+            $path =
+                trim(
+                    (string) (
+                        $mailerConfig[
+                            'path'
+                        ] ?? ''
+                    )
+                );
+
+            if ($path === '') {
+                return [
+                    'passes' => false,
+                    'actual' =>
+                        'sendmail path missing',
+                ];
+            }
+
+            return [
+                'passes' => true,
+                'actual' =>
+                    'sendmail configured',
+            ];
+        }
+
+        $supportedApiTransports = [
+            'mailgun',
+            'ses',
+            'ses-v2',
+            'postmark',
+            'resend',
+        ];
+
+        if (
+            ! in_array(
+                $transport,
+                $supportedApiTransports,
+                true
+            )
+        ) {
+            return [
+                'passes' => false,
+                'actual' =>
+                    "unsupported mail transport: {$transport}",
+            ];
+        }
+
+        return [
+            'passes' => true,
+            'actual' =>
+                "{$mailer} ({$transport})",
+        ];
+    }
+
+    /**
+     * Inspect SMTP without exposing credentials in command output.
+     *
+     * @param array<string, mixed> $mailerConfig
+     * @return array{passes: bool, actual: string}
+     */
+    private function inspectSmtpConfiguration(
+        array $mailerConfig
+    ): array {
+        $url =
+            trim(
+                (string) (
+                    $mailerConfig[
+                        'url'
+                    ] ?? ''
+                )
+            );
+
+        $host = null;
+
+        $port =
+            $mailerConfig[
+                'port'
+            ] ?? null;
+
+        if ($url !== '') {
+            $urlHost =
+                parse_url(
+                    $url,
+                    PHP_URL_HOST
+                );
+
+            if (
+                ! is_string(
+                    $urlHost
+                ) ||
+                trim($urlHost) === ''
+            ) {
+                return [
+                    'passes' => false,
+                    'actual' =>
+                        'SMTP URL has no valid host',
+                ];
+            }
+
+            $host =
+                $urlHost;
+
+            $urlPort =
+                parse_url(
+                    $url,
+                    PHP_URL_PORT
+                );
+
+            if ($urlPort !== null) {
+                $port =
+                    $urlPort;
+            }
+        } else {
+            $host =
+                $mailerConfig[
+                    'host'
+                ] ?? null;
+        }
+
+        $host =
+            strtolower(
+                trim(
+                    (string) $host,
+                    " \t\n\r\0\x0B[]"
+                )
+            );
+
+        if ($host === '') {
+            return [
+                'passes' => false,
+                'actual' =>
+                    'SMTP host missing',
+            ];
+        }
+
+        $unsafeHosts = [
+            'localhost',
+            'localhost.localdomain',
+            '127.0.0.1',
+            '0.0.0.0',
+            '::1',
+            'mailhog',
+            'mailpit',
+        ];
+
+        if (
+            in_array(
+                $host,
+                $unsafeHosts,
+                true
+            )
+        ) {
+            return [
+                'passes' => false,
+                'actual' =>
+                    "unsafe SMTP host: {$host}",
+            ];
+        }
+
+        $validatedPort =
+            filter_var(
+                $port,
+                FILTER_VALIDATE_INT,
+                [
+                    'options' => [
+                        'min_range' => 1,
+                        'max_range' => 65535,
+                    ],
+                ]
+            );
+
+        if ($validatedPort === false) {
+            return [
+                'passes' => false,
+                'actual' =>
+                    'SMTP port missing or invalid',
+            ];
+        }
+
+        return [
+            'passes' => true,
+            'actual' =>
+                "smtp {$host}:{$validatedPort}",
+        ];
     }
 }
