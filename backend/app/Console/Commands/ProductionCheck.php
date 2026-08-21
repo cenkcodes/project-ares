@@ -33,6 +33,45 @@ class ProductionCheck extends Command
                 )
             );
 
+        $mailMailer =
+            strtolower(
+                trim(
+                    (string) config(
+                        'mail.default'
+                    )
+                )
+            );
+
+        $unsafeMailers = [
+            '',
+            'log',
+            'array',
+        ];
+
+        $mailTransportIsProductionReady =
+            ! in_array(
+                $mailMailer,
+                $unsafeMailers,
+                true
+            );
+
+        $mailFromAddress =
+            strtolower(
+                trim(
+                    (string) config(
+                        'mail.from.address'
+                    )
+                )
+            );
+
+        $mailFromAddressIsProductionReady =
+            filter_var(
+                $mailFromAddress,
+                FILTER_VALIDATE_EMAIL
+            ) !== false &&
+            $mailFromAddress ===
+                'no-reply@xurvexa.com';
+
         $checks = [
             [
                 'name' =>
@@ -118,6 +157,38 @@ class ProductionCheck extends Command
                     filled(
                         config('app.key')
                     ),
+            ],
+
+            [
+                'name' =>
+                    'Mail transport',
+
+                'expected' =>
+                    'production mail transport',
+
+                'actual' =>
+                    $mailMailer !== ''
+                        ? $mailMailer
+                        : 'missing',
+
+                'passes' =>
+                    $mailTransportIsProductionReady,
+            ],
+
+            [
+                'name' =>
+                    'Mail from address',
+
+                'expected' =>
+                    'no-reply@xurvexa.com',
+
+                'actual' =>
+                    $mailFromAddress !== ''
+                        ? $mailFromAddress
+                        : 'missing',
+
+                'passes' =>
+                    $mailFromAddressIsProductionReady,
             ],
 
             [
