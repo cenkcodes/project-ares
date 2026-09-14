@@ -1,0 +1,18 @@
+[Unit]
+Description=Xurvexa Laravel Scheduler Tick
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/project-ares/backend
+Environment=APP_ENV=production
+ExecStart=/usr/bin/php artisan schedule:run --no-interaction
+TimeoutStartSec=2h
+UMask=0002
+
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6

@@ -1,0 +1,2 @@
+ops/seo/systemd/*.service text eol=lf
+ops/seo/systemd/*.timer text eol=lf
