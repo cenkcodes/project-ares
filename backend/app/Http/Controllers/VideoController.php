@@ -63,12 +63,43 @@ class VideoController extends Controller
 
         $video->increment('views');
 
-        $video = $video->fresh('category');
+        $video = $video->fresh(['category', 'seoContent']);
 
         $relatedVideos = $this->getRelatedVideos($video);
 
+        $seoContent = $video->seoContent;
+        $publishedSeoDescription = null;
+        $publishedSeoMetaDescription = null;
+
+        if ($seoContent !== null && $seoContent->quality_status === 'published') {
+            $publishedSeoDescription = trim((string) $seoContent->description) ?: null;
+            $publishedSeoMetaDescription = trim((string) $seoContent->meta_description) ?: null;
+        }
+
+        $seoIndexEligible = $seoContent !== null
+            && $seoContent->quality_status === 'published'
+            && $seoContent->published_at !== null
+            && trim((string) $seoContent->description) !== ''
+            && trim((string) $seoContent->meta_description) !== '';
+        $robotsContent = app()->environment('production')
+            ? ($seoIndexEligible ? 'index,follow' : 'noindex,follow')
+            : 'noindex,nofollow';
+
+        $categoryName = $video->category?->is_active
+            ? trim((string) $video->category->name)
+            : '';
+        $descriptionFallback = $categoryName !== ''
+            ? $categoryName . ' video.'
+            : 'Video.';
+        $pageDescription = $publishedSeoMetaDescription ?? $descriptionFallback;
+        $videoStructuredDescription = $publishedSeoDescription ?? $descriptionFallback;
+
         return view('videos.show', [
             'video' => $video,
+            'publishedSeoDescription' => $publishedSeoDescription,
+            'pageDescription' => $pageDescription,
+            'videoStructuredDescription' => $videoStructuredDescription,
+            'robotsContent' => $robotsContent,
             'relatedVideos' => $relatedVideos,
         ]);
     }

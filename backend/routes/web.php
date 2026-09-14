@@ -87,6 +87,8 @@ Route::view('/content-removal', 'pages.content-removal')
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])
     ->name('seo.sitemap');
 
+Route::get('/video-sitemap.xml', [SeoController::class, 'videoSitemap'])->name('seo.video-sitemap');
+
 Route::get('/robots.txt', [SeoController::class, 'robots'])
     ->name('seo.robots');
 

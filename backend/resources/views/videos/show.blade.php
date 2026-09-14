@@ -3,33 +3,13 @@
         $video->title .
         ' | Xurvexa';
 
-    $rawDescription =
-        $video->description
-            ?: 'Watch ' .
-                $video->title .
-                ' on Xurvexa.';
-
-    $pageDescription =
-        \Illuminate\Support\Str::limit(
-            preg_replace(
-                '/\s+/',
-                ' ',
-                strip_tags($rawDescription)
-            ),
-            155,
-            ''
-        );
-
     $canonicalUrl =
         route(
             'videos.show',
             $video->slug
         );
 
-    $robotsContent =
-        app()->environment('production')
-            ? 'index,follow'
-            : 'noindex,nofollow';
+    $robotsContent = $robotsContent ?? 'noindex,nofollow';
 
     $ogType =
         'video.other';
@@ -42,6 +22,93 @@
         $video->title;
 
     $showHeaderSearch = false;
+
+    $videoStructuredData = null;
+
+    if (
+        $video->thumbnail &&
+        $video->created_at
+    ) {
+        $durationSeconds =
+            max(
+                0,
+                (int) $video->duration
+            );
+
+        $durationHours =
+            intdiv(
+                $durationSeconds,
+                3600
+            );
+
+        $durationMinutes =
+            intdiv(
+                $durationSeconds % 3600,
+                60
+            );
+
+        $durationRemainderSeconds =
+            $durationSeconds % 60;
+
+        $durationParts = [];
+
+        if ($durationHours > 0) {
+            $durationParts[] =
+                $durationHours . 'H';
+        }
+
+        if ($durationMinutes > 0) {
+            $durationParts[] =
+                $durationMinutes . 'M';
+        }
+
+        if (
+            $durationRemainderSeconds > 0 ||
+            $durationParts === []
+        ) {
+            $durationParts[] =
+                $durationRemainderSeconds . 'S';
+        }
+
+        $videoStructuredData = [
+            '@context' =>
+                'https://schema.org',
+
+            '@type' =>
+                'VideoObject',
+
+            'name' =>
+                $video->title,
+
+            'description' =>
+                $videoStructuredDescription,
+
+            'thumbnailUrl' => [
+                $video->thumbnail,
+            ],
+
+            /*
+             * Xurvexa does not currently store the
+             * source platform's original publication
+             * date. created_at is therefore used as
+             * the date this watch page/video entry was
+             * first published on Xurvexa.
+             */
+            'uploadDate' =>
+                $video->created_at
+                    ->toIso8601String(),
+
+        ];
+
+        if ($durationSeconds > 0) {
+            $videoStructuredData['duration'] = 'PT' . implode('', $durationParts);
+        }
+
+        if ($video->embed_url) {
+            $videoStructuredData['embedUrl'] =
+                $video->embed_url;
+        }
+    }
 @endphp
 
 @extends('layouts.public')
@@ -287,6 +354,25 @@
 
 
 @section('content')
+@if($videoStructuredData)
+
+    <script type="application/ld+json">
+{!! json_encode(
+    $videoStructuredData,
+    JSON_UNESCAPED_SLASHES
+    | JSON_UNESCAPED_UNICODE
+    | JSON_HEX_TAG
+    | JSON_HEX_AMP
+    | JSON_HEX_APOS
+    | JSON_HEX_QUOT
+) !!}
+    </script>
+
+@endif
+
+
+
+
 
 <div
     data-xurvexa-monetization
@@ -418,16 +504,12 @@
         </div>
 
 
-        @if($video->description)
-
-            <div class="description">
-
-                {{ $video->description }}
-
-            </div>
-
+        @if($publishedSeoDescription !== null)
+            <section class="description" aria-labelledby="about-video-title">
+                <h2 id="about-video-title">About this video</h2>
+                <p>{{ $publishedSeoDescription }}</p>
+            </section>
         @endif
-
 
         @if($video->video_source)
 
