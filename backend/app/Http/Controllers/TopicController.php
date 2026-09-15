@@ -17,6 +17,9 @@ class TopicController extends Controller
         Request $request,
         string $slug
     ) {
+        $globalTopicExposureEnabled =
+            config('seo.topic_index_exposure_enabled', false) === true;
+
         $topic =
             SeoTopic::query()
                 ->publicLandingPageEligible()
@@ -66,7 +69,11 @@ class TopicController extends Controller
 
         $relatedTopics =
             SeoTopic::query()
-                ->publicLandingPageEligible()
+                ->when(
+                    $globalTopicExposureEnabled,
+                    fn ($query) => $query->searchExposureEligible(),
+                    fn ($query) => $query->publicLandingPageEligible()
+                )
                 ->where(
                     'primary_category_id',
                     $topic->primary_category_id
@@ -101,6 +108,7 @@ class TopicController extends Controller
                 ->whereNotNull(
                     'published_at'
                 )
+                ->where('quality_status', 'published')
                 ->orderByDesc(
                     'published_at'
                 )
@@ -124,16 +132,9 @@ class TopicController extends Controller
                 'topicContent' =>
                     $topicContent,
 
-                /*
-                 * Topic Landing Page V1 is intentionally
-                 * not opened to search-engine indexing yet.
-                 *
-                 * Index exposure is a later controlled stage
-                 * after Topic editorial content, frontend QA,
-                 * internal-link QA and sitemap readiness pass.
-                 */
+                // The page lookup already enforces public eligibility.
                 'topicIndexExposureEnabled' =>
-                    false,
+                    $globalTopicExposureEnabled && $topic->published_at !== null,
 
                 'requestHasQueryParameters' =>
                     $request->query() !== [],

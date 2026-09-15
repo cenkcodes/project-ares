@@ -45,7 +45,7 @@
 
     @endforeach
 
-    @foreach($videos as $video)
+    @foreach($videos ?? [] as $video)
 
         <url>
 
@@ -60,6 +60,15 @@
 
             @endif
 
+        </url>
+
+    @endforeach
+
+    @foreach($topics as $topic)
+
+        <url>
+            <loc>{{ route('topics.show', $topic->slug) }}</loc>
+            <lastmod>{{ $topic->published_at->toAtomString() }}</lastmod>
         </url>
 
     @endforeach

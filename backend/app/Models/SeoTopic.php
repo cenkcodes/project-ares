@@ -99,4 +99,11 @@ class SeoTopic extends Model
                 }
             );
     }
+
+    public function scopeSearchExposureEligible($query)
+    {
+        return $query
+            ->publicLandingPageEligible()
+            ->whereNotNull('seo_topics.published_at');
+    }
 }

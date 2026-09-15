@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\SeoTopic;
 use App\Models\Video;
 use Illuminate\Http\Response;
 use Illuminate\Http\Request;
@@ -17,6 +18,15 @@ class SeoController extends Controller
 
     public function sitemap(): Response
     {
+        $topics = collect();
+
+        if (config('seo.topic_index_exposure_enabled', false) === true) {
+            $topics = SeoTopic::query()
+                ->searchExposureEligible()
+                ->orderBy('id')
+                ->get(['slug', 'published_at']);
+        }
+
         $categories = Category::query()
             ->where('is_active', true)
             ->select([
@@ -63,6 +73,8 @@ class SeoController extends Controller
             ->view(
                 'seo.sitemap',
                 [
+                    'topics' => $topics,
+
                     'categories' =>
                         $categories,
 
