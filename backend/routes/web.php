@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MonetizationRuntimeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SeoController;
+use App\Http\Controllers\TopicController;
 use App\Http\Controllers\VideoController;
 use App\Http\Middleware\RequireAdultConsent;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,10 @@ Route::get('/', [HomeController::class, 'index'])
 Route::get('/videos', [VideoController::class, 'index'])
     ->middleware(RequireAdultConsent::class)
     ->name('videos.index');
+
+Route::get('/topics/{slug}', [TopicController::class, 'show'])
+    ->middleware(RequireAdultConsent::class)
+    ->name('topics.show');
 
 Route::get('/categories/{slug}', [VideoController::class, 'category'])
     ->middleware(RequireAdultConsent::class)
