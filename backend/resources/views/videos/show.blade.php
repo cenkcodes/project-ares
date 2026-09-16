@@ -114,6 +114,7 @@
 @extends('layouts.public')
 
 
+
 @section('pageStyles')
 
     .page {
@@ -166,11 +167,14 @@
 
         width: 100%;
 
-        margin-top: 18px;
+        margin:
+            18px auto 0;
 
         min-height: 0;
 
         overflow: hidden;
+
+        text-align: center;
     }
 
     .video-ad-slot[data-enabled="true"] {
@@ -193,7 +197,21 @@
 
     .video-ad-slot[data-ad-state="rendering"],
     .video-ad-slot[data-ad-state="rendered"] {
+        display: grid;
+
+        place-items:
+            start center;
+
         visibility: visible;
+    }
+
+    .video-ad-slot[data-ad-state="rendering"] > *,
+    .video-ad-slot[data-ad-state="rendered"] > * {
+        margin-left:
+            auto !important;
+
+        margin-right:
+            auto !important;
     }
 
     .video-info {
@@ -255,19 +273,102 @@
         color: #fff;
     }
 
-    .description {
+    .about-section {
         margin-top: 22px;
 
-        padding-top: 20px;
+        padding: 22px;
 
-        border-top:
+        border:
             1px solid #292929;
+
+        border-radius: 10px;
+
+        background: #151515;
+    }
+
+    .about-title {
+        margin: 0 0 12px;
+
+        color: #fff;
+
+        font-size: 18px;
+
+        line-height: 1.3;
+    }
+
+    .description,
+    .video-summary {
+        margin: 0;
 
         color: #ccc;
 
         font-size: 15px;
 
         line-height: 1.7;
+    }
+
+    .description-original {
+        margin-top: 16px;
+
+        padding-top: 16px;
+
+        border-top:
+            1px solid #292929;
+    }
+
+    .topics {
+        margin-top: 18px;
+    }
+
+    .topics-label {
+        margin-bottom: 10px;
+
+        color: #888;
+
+        font-size: 12px;
+        font-weight: 700;
+
+        letter-spacing: 0.04em;
+
+        text-transform: uppercase;
+    }
+
+    .topic-list {
+        display: flex;
+
+        flex-wrap: wrap;
+
+        gap: 8px;
+    }
+
+    .topic-chip {
+        display: inline-flex;
+
+        align-items: center;
+
+        padding:
+            7px 10px;
+
+        border:
+            1px solid #303030;
+
+        border-radius: 999px;
+
+        background: #1c1c1c;
+
+        color: #ccc;
+
+        font-size: 13px;
+
+        line-height: 1;
+
+        text-decoration: none;
+    }
+
+    .topic-chip:hover {
+        border-color: #4a4a4a;
+
+        color: #fff;
     }
 
     .source {
@@ -353,7 +454,9 @@
 @endsection
 
 
+
 @section('content')
+
 @if($videoStructuredData)
 
     <script type="application/ld+json">
@@ -372,8 +475,6 @@
 
 
 
-
-
 <div
     data-xurvexa-monetization
     data-interaction-url="{{ route('monetization.interaction') }}"
@@ -387,6 +488,7 @@
 </div>
 
 
+
 <main class="page">
 
     <a
@@ -397,6 +499,7 @@
     </a>
 
 
+
     <div class="video-wrapper">
 
         <iframe
@@ -404,11 +507,15 @@
             title="{{ $video->title }}"
             loading="lazy"
             allow="autoplay; fullscreen; picture-in-picture"
+            @if($video->video_source === 'xnxx')
+                sandbox="allow-scripts allow-same-origin allow-presentation"
+            @endif
             allowfullscreen
         >
         </iframe>
 
     </div>
+
 
 
     <div
@@ -421,6 +528,7 @@
         aria-hidden="true"
     >
     </div>
+
 
 
     <div class="video-info">
@@ -440,31 +548,26 @@
 
             </span>
 
-            @if($video->video_source)
+            @if($sourceLabel)
 
                 <span class="separator">
                     &middot;
                 </span>
 
                 <span>
-                    {{ $video->video_source }}
+                    {{ $sourceLabel }}
                 </span>
 
             @endif
 
-            @if($video->duration)
+            @if($durationLabel)
 
                 <span class="separator">
                     &middot;
                 </span>
 
                 <span>
-
-                    {{ gmdate(
-                        'H:i:s',
-                        $video->duration
-                    ) }}
-
+                    {{ $durationLabel }}
                 </span>
 
             @endif
@@ -504,25 +607,76 @@
         </div>
 
 
-        @if($publishedSeoDescription !== null)
-            <section class="description" aria-labelledby="about-video-title">
-                <h2 id="about-video-title">About this video</h2>
-                <p>{{ $publishedSeoDescription }}</p>
-            </section>
-        @endif
 
-        @if($video->video_source)
+        @if($publishedSeoDescription !== null || $topicCategories->isNotEmpty() || $sourceLabel)
+        <section
+            class="about-section"
+            aria-labelledby="about-video-title"
+        >
 
-            <div class="source">
+            <h2
+                id="about-video-title"
+                class="about-title"
+            >
+                About this video
+            </h2>
 
-                Source:
-                {{ $video->video_source }}
+            @if($publishedSeoDescription !== null)
+                <p class="video-summary">
+                    {{ $publishedSeoDescription }}
+                </p>
+            @endif
 
-            </div>
+            @if($topicCategories->isNotEmpty())
 
+                <div class="topics">
+
+                    <div class="topics-label">
+                        Topics
+                    </div>
+
+                    <nav
+                        class="topic-list"
+                        aria-label="Video topics"
+                    >
+
+                        @foreach(
+                            $topicCategories
+                            as $topicCategory
+                        )
+
+                            <a
+                                class="topic-chip"
+                                href="{{ route(
+                                    'videos.category',
+                                    $topicCategory->slug
+                                ) }}"
+                            >
+                                {{ $topicCategory->name }}
+                            </a>
+
+                        @endforeach
+
+                    </nav>
+
+                </div>
+
+            @endif
+
+            @if($sourceLabel)
+
+                <div class="source">
+                    Source:
+                    {{ $sourceLabel }}
+                </div>
+
+            @endif
+
+        </section>
         @endif
 
     </div>
+
 
 
     <section class="related-section">
@@ -579,6 +733,7 @@
     </section>
 
 </main>
+
 
 
 @vite([

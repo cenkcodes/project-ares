@@ -1,3 +1,6 @@
+import './video-exoclick-banner-driver';
+import './video-adsterra-banner-driver';
+
 class XurvexaBannerRenderer {
     constructor(
         adapter,
@@ -21,6 +24,11 @@ class XurvexaBannerRenderer {
             this.handleSlotReady.bind(
                 this
             );
+
+        this.handleConsentChanged =
+            this.handleConsentChanged.bind(
+                this
+            );
     }
 
     bind() {
@@ -33,7 +41,18 @@ class XurvexaBannerRenderer {
             this.handleSlotReady
         );
 
+        window.addEventListener(
+            'xurvexa:consent-changed',
+            this.handleConsentChanged
+        );
+
         this.bound = true;
+
+        if (!this.hasAdvertisingConsent()) {
+            this.clearAllSlots();
+
+            return;
+        }
 
         this.renderReadySlots()
             .catch(
@@ -47,6 +66,74 @@ class XurvexaBannerRenderer {
                     );
                 }
             );
+    }
+
+    hasAdvertisingConsent() {
+        const consent =
+            window.XurvexaConsent;
+
+        if (
+            !consent ||
+            typeof consent.has !== 'function'
+        ) {
+            return false;
+        }
+
+        try {
+            return consent.has(
+                'advertising'
+            ) === true;
+        } catch {
+            return false;
+        }
+    }
+
+    handleConsentChanged() {
+        if (!this.hasAdvertisingConsent()) {
+            this.clearAllSlots();
+
+            this.dispatchRendererEvent(
+                'xurvexa:banner-renderer-consent-revoked',
+                null
+            );
+
+            return;
+        }
+
+        this.dispatchRendererEvent(
+            'xurvexa:banner-renderer-consent-granted',
+            null
+        );
+
+        this.renderReadySlots()
+            .catch(
+                (error) => {
+                    this.dispatchRendererEvent(
+                        'xurvexa:banner-renderer-error',
+                        null,
+                        {
+                            error,
+                        }
+                    );
+                }
+            );
+    }
+
+    clearAllSlots() {
+        const slots =
+            this.root.querySelectorAll(
+                this.slotSelector
+            );
+
+        for (const slot of slots) {
+            if (
+                slot instanceof HTMLElement
+            ) {
+                this.clearSlot(
+                    slot
+                );
+            }
+        }
     }
 
     registerDriver(
@@ -133,6 +220,10 @@ class XurvexaBannerRenderer {
     handleSlotReady(
         event
     ) {
+        if (!this.hasAdvertisingConsent()) {
+            return;
+        }
+
         const slot =
             event.detail?.slot
             ?? null;
@@ -165,6 +256,10 @@ class XurvexaBannerRenderer {
     async renderReadySlots(
         driverName = null
     ) {
+        if (!this.hasAdvertisingConsent()) {
+            return;
+        }
+
         const slots =
             this.root.querySelectorAll(
                 this.slotSelector
@@ -213,6 +308,19 @@ class XurvexaBannerRenderer {
         this.assertSlotElement(
             slot
         );
+
+        if (!this.hasAdvertisingConsent()) {
+            this.clearSlot(
+                slot
+            );
+
+            this.dispatchRendererEvent(
+                'xurvexa:banner-renderer-consent-blocked',
+                slot
+            );
+
+            return null;
+        }
 
         if (
             slot.dataset.enabled
@@ -323,6 +431,26 @@ class XurvexaBannerRenderer {
                 slot,
                 driverName,
                 error
+            );
+
+            return null;
+        }
+
+        if (!this.hasAdvertisingConsent()) {
+            this.clearSlot(
+                slot
+            );
+
+            this.renderingSlots.delete(
+                slot
+            );
+
+            this.dispatchRendererEvent(
+                'xurvexa:banner-renderer-consent-blocked',
+                slot,
+                {
+                    driverName,
+                }
             );
 
             return null;
@@ -442,6 +570,10 @@ class XurvexaBannerRenderer {
         this.assertSlotElement(
             slot
         );
+
+        if (!this.hasAdvertisingConsent()) {
+            return null;
+        }
 
         return this.adapter
             .recordClick(

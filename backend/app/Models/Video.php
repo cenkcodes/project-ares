@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Video extends Model
@@ -48,8 +49,16 @@ class Video extends Model
     {
         return $this->belongsTo(Category::class);
     }
+
+    public function sourceTerms(): HasMany
+    {
+        return $this->hasMany(VideoSourceTerm::class);
+    }
+
     public function seoContent(): HasOne
     {
-        return $this->hasOne(VideoSeoContent::class);
+        return $this->hasOne(
+            VideoSeoContent::class
+        );
     }
 }

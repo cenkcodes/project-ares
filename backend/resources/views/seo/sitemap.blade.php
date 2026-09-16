@@ -26,6 +26,37 @@
 
     </url>
 
+    <url>
+
+        <loc>{{ route('guides.index') }}</loc>
+
+        @if($latestGuideUpdate)
+
+            <lastmod>{{ $latestGuideUpdate }}</lastmod>
+
+        @endif
+
+    </url>
+
+    @foreach($guides as $guide)
+
+        <url>
+
+            <loc>{{ route(
+                'guides.show',
+                ['slug' => $guide['slug']]
+            ) }}</loc>
+
+            @if($guide['updated_at'])
+
+                <lastmod>{{ $guide['updated_at'] }}</lastmod>
+
+            @endif
+
+        </url>
+
+    @endforeach
+
     @foreach($categories as $category)
 
         <url>

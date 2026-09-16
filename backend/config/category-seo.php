@@ -1,0 +1,31 @@
+<?php
+
+return [
+    'related_categories' => [
+        'amateur' => ['pov', 'public', 'latina', 'lesbian'],
+        'milf' => ['mature', 'brunette', 'blonde', 'big-tits'],
+        'asian' => ['japanese', 'amateur', 'pov'],
+        'latina' => ['amateur', 'brunette', 'big-ass', 'pov'],
+        'anal' => ['hardcore', 'pov', 'big-ass'],
+        'pov' => ['amateur', 'hardcore', 'massage'],
+        'blonde' => ['brunette', 'milf', 'big-tits'],
+        'brunette' => ['blonde', 'milf', 'latina'],
+        'big-tits' => ['bbw', 'milf', 'big-ass'],
+        'hardcore' => ['anal', 'pov', 'threesome', 'pornstar'],
+        'lesbian' => ['amateur', 'pov', 'blonde', 'brunette'],
+        'blowjob' => ['handjob', 'cumshot', 'pov'],
+        'cumshot' => ['blowjob', 'creampie', 'hardcore'],
+        'interracial' => ['ebony', 'latina', 'asian'],
+        'handjob' => ['blowjob', 'cumshot', 'pov'],
+        'pornstar' => ['hardcore', 'milf', 'blonde'],
+        'threesome' => ['hardcore', 'interracial', 'pov'],
+        'mature' => ['milf', 'amateur', 'brunette'],
+        'japanese' => ['asian', 'pov', 'amateur'],
+        'ebony' => ['interracial', 'big-ass', 'bbw'],
+        'big-ass' => ['bbw', 'latina', 'anal'],
+        'creampie' => ['cumshot', 'hardcore', 'anal'],
+        'bbw' => ['big-ass', 'big-tits', 'ebony'],
+        'massage' => ['pov', 'amateur', 'mature'],
+        'public' => ['amateur', 'pov', 'hardcore'],
+    ],
+];

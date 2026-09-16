@@ -1,0 +1,47 @@
+{
+  "package": "xurvexa-eporner-provider-v1",
+  "date": "2026-09-02",
+  "purpose": "Install Eporner as the first additional video provider using official API v2, without modifying the proven XVideos pipeline.",
+  "deployment_mode": "install new runtime files + conservative provider row + prepare-only smoke; no Eporner video import",
+  "package_files": {
+    "eporner-api-collector.py": "94e27c4e388941f98bceb5dc77d9777fffb0cc1eb3da082ea7fa399936b21410",
+    "eporner-csv-builder.py": "0f929cba3e3bf6c7a84bf5af28bef711186850f8287426a768ed4b0005ac4eba",
+    "eporner-batch.php": "6af038866edf286657a5eae5049ba275b31c82984f183573b53acd12a7f8c72c",
+    "eporner-provider-bootstrap.php": "741a567e17793f980e77e8c06c048ef23729bbd0c8836201918696bf475509a7",
+    "deploy-eporner-provider-v1.sh": "0a8c6f9a6a1c6290f4c24853874b05d13d96ddb497ed89d714331649a2c32cb7",
+    "deploy-eporner-provider-v1.ps1": "744553f73b2767addc68533c667f7e940fc6dfa45e4755daa4028a0db379c5a9",
+    "README.txt": "8c5f7e9c9d382e1799affa1369c24eeae6d064727e59ef92f9088b2538012038"
+  },
+  "protected_production_hashes": {
+    "/var/www/project-ares/ops/video-import/xvideos-batch.php": "876b668171dd1744a7887390121edbe32522673d6cebefef6d1ebd8fa201d3a7",
+    "/var/www/project-ares/ops/video-import/xvideos-url-collector.py": "000796a3cef3f03eeea041840f9fc0ff8cafee6540baaaf057c5a1b1822cff70",
+    "/var/www/project-ares/ops/video-import/xvideos-csv-builder.py": "338532ef065106df18f5bb52f5c20d4f63bc71bc68366545bc96791f1a4dafc9",
+    "/var/www/project-ares/ops/video-import/video_import_policy.py": "9f71752390a9b6101f51cdfa8e2ddad56fe1e364294256e59bc80ef40aa3fb52",
+    "/var/www/project-ares/ops/video-import/import-video-source-terms.php": "722d23cb06c72a3fd1ce347a8f5827f954dc37357cce64c839fcb93ab8bbf0d8",
+    "/var/www/project-ares/backend/app/Filament/Imports/VideoImporter.php": "67a8cc1584efc72801ab83b9ad7d8194ddb5d8c4a4189679553248fb49b9dcd4",
+    "/var/www/project-ares/backend/app/Models/Video.php": "887d505cba4ab63864ba4a164ad1df814e6ff1c26349ed54f9dc31d1b1bba135",
+    "/var/www/project-ares/backend/app/Models/VideoProvider.php": "5f1b58072f117922a98f581d84da982b2e27cbf5a3bdfb434b010a2d4bc21968"
+  },
+  "expected_predeploy_baseline": {
+    "total_videos": 15455,
+    "active_videos": 15455,
+    "xvideos_videos": 15455,
+    "eporner_videos": 0,
+    "active_categories": 25,
+    "source_terms": 223528,
+    "orphans": 0
+  },
+  "provider_v1_defaults": {
+    "slug": "eporner",
+    "is_active": true,
+    "monetization_enabled": false,
+    "has_own_ads": true,
+    "allow_xurvexa_preroll": false,
+    "allow_xurvexa_midroll": false,
+    "allow_popunder": false,
+    "allow_native_ads": false,
+    "allow_banner_ads": false,
+    "allow_interstitial": false
+  },
+  "next_step_after_pass": "Run a deliberately small persistent Eporner import, verify DB/source-term integrity, then visually QA embed playback before scaling."
+}

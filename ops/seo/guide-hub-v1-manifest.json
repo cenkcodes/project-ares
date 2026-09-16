@@ -1,0 +1,112 @@
+{
+  "package": "Xurvexa Guide Hub V1",
+  "version": "1.0.0",
+  "generated_for": "Project-Ares / Xurvexa",
+  "content_date": "2026-09-02",
+  "pilot_guides": [
+    "milf-vs-mature",
+    "asian-vs-japanese",
+    "bbw-vs-big-ass-vs-big-tits",
+    "cumshot-vs-creampie"
+  ],
+  "guide_count": 4,
+  "category_to_guide_mappings": {
+    "milf": [
+      "milf-vs-mature"
+    ],
+    "mature": [
+      "milf-vs-mature"
+    ],
+    "asian": [
+      "asian-vs-japanese"
+    ],
+    "japanese": [
+      "asian-vs-japanese"
+    ],
+    "bbw": [
+      "bbw-vs-big-ass-vs-big-tits"
+    ],
+    "big-ass": [
+      "bbw-vs-big-ass-vs-big-tits"
+    ],
+    "big-tits": [
+      "bbw-vs-big-ass-vs-big-tits"
+    ],
+    "cumshot": [
+      "cumshot-vs-creampie"
+    ],
+    "creampie": [
+      "cumshot-vs-creampie"
+    ]
+  },
+  "word_counts": {
+    "milf-vs-mature": 658,
+    "asian-vs-japanese": 600,
+    "bbw-vs-big-ass-vs-big-tits": 608,
+    "cumshot-vs-creampie": 619
+  },
+  "expected_production_baseline": {
+    "active_videos": 15455,
+    "active_categories": 25,
+    "source_terms": 223528,
+    "orphans": 0,
+    "categories_with_description": 25,
+    "categories_with_meta_description": 25
+  },
+  "expected_current_hashes": {
+    "routes/web.php": "3c0e7b219487e303cb36d7cd7cbac974094410437c48619cf79a8d9e7514a96b",
+    "app/Http/Controllers/SeoController.php": "94b4ea2721d6972ed52346a448b605aa16b9b24caa39359f29742fa77f8c0c55",
+    "resources/views/seo/sitemap.blade.php": "5a0c9bb8b0dda93167846f89c96ab7dc73ad6fa039043bc730798114102e317a",
+    "resources/views/videos/index.blade.php": "254673747b72352bf5e8e47e0317b385ee1ae9284a74669df76e6a34f93b2f18",
+    "config/category-seo.php": "d01cdc3656e520b6d7c086b3e581929f3b3a0c6b8a3a4b5efe39c0d60a4a2bd7",
+    "resources/views/layouts/public.blade.php": "eed78c2f9fe11c80495b7b6b1f82fdcb6f2090b14b1466c90484f21d111c6a4e"
+  },
+  "expected_main_sitemap": {
+    "total_urls": 15487,
+    "video_urls": 15455,
+    "category_urls": 25,
+    "guide_urls_including_index": 5
+  },
+  "stage_files": [
+    {
+      "path": "stage/app/Http/Controllers/GuideController.php",
+      "sha256": "644ee4035851d3f12d7be148c9132a96170fb9a3a84151b1684717b1f821f4e4",
+      "size_bytes": 2017
+    },
+    {
+      "path": "stage/app/Http/Controllers/SeoController.php",
+      "sha256": "5af22b43b8263ac291a4462701e742c00b039aae13c54e3e6e539be8c58ae38f",
+      "size_bytes": 4787
+    },
+    {
+      "path": "stage/config/guide-seo.php",
+      "sha256": "b3e39137222006aeff989d52f5d0d1604f814a9a9775efe68ff47225cfd8e498",
+      "size_bytes": 27040
+    },
+    {
+      "path": "stage/resources/views/guides/index.blade.php",
+      "sha256": "8bb9050e99e87433683e0122bec3991d9cd576389d0829e47c5fea9fda193c73",
+      "size_bytes": 3201
+    },
+    {
+      "path": "stage/resources/views/guides/show.blade.php",
+      "sha256": "2d5229c8bc4cd2b9ecba1ee2000b4ac6eaaf6fcbff93422cdee64c3a04527c9e",
+      "size_bytes": 5039
+    },
+    {
+      "path": "stage/resources/views/seo/sitemap.blade.php",
+      "sha256": "898d39c9d4ff0c3ba7f98a5fcd6e462dc6139371ada6837aeecbb804d4a7d135",
+      "size_bytes": 1673
+    },
+    {
+      "path": "stage/resources/views/videos/index.blade.php",
+      "sha256": "d3ea28bc4ea05cef797da09be30232dd2586c2b97c288bd2c4c6a9676576b58b",
+      "size_bytes": 20546
+    },
+    {
+      "path": "stage/routes/web.php",
+      "sha256": "858f275f9e9843894e2722aa4bf6d983d1a4455098bce5a40418a3e171dea5a4",
+      "size_bytes": 4141
+    }
+  ]
+}

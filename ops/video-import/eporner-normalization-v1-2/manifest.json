@@ -1,0 +1,31 @@
+{
+  "package": "xurvexa-eporner-normalization-v1-2",
+  "version": "1.2",
+  "files": [
+    {
+      "name": "eporner-csv-builder.py",
+      "sha256": "de17855829272ea77bc0e67afd8bb179593a19e201ffcd9d678748473b60331d",
+      "bytes": 18190
+    },
+    {
+      "name": "verify-source-term-normalization.php",
+      "sha256": "05170bbc91f41079290061f207f1de6c5b8adc4d84437cc44362cfce16bda17a",
+      "bytes": 3023
+    },
+    {
+      "name": "deploy-eporner-normalization-v1-2.sh",
+      "sha256": "bac986b5321432db864310f0b51a4a5c80ba3c4327292ecff7ae3f057c99bce8",
+      "bytes": 5690
+    },
+    {
+      "name": "deploy-eporner-normalization-v1-2.ps1",
+      "sha256": "149ce30edd8a076feca413d0d0890a3e94d04cff8bfe6f650e8d4447b2a123d9",
+      "bytes": 3865
+    },
+    {
+      "name": "README.txt",
+      "sha256": "43d81c3349878af81266abaabc66ba3e39bf1b21044fcb6d22d186a551f40509",
+      "bytes": 1230
+    }
+  ]
+}

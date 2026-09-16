@@ -1,0 +1,122 @@
+{
+  "package": "xurvexa-guide-hub-v2",
+  "version": "2026-09-02.2",
+  "strategy": "config-only expansion of proven Guide Hub V1 architecture",
+  "expected_predeploy": {
+    "active_videos": 15455,
+    "active_categories": 25,
+    "source_terms": 223528,
+    "orphans": 0,
+    "main_sitemap_urls": 15487,
+    "main_guide_urls": 5,
+    "video_sitemap_entries": 15455,
+    "existing_guides": 4
+  },
+  "expected_postdeploy": {
+    "main_sitemap_urls": 15495,
+    "main_guide_urls": 13,
+    "video_sitemap_entries": 15455,
+    "active_guides": 12
+  },
+  "new_guides": [
+    "pov-videos-explained",
+    "amateur-videos-explained",
+    "blonde-vs-brunette",
+    "japanese-video-categories",
+    "mature-video-categories",
+    "how-xurvexa-categories-work",
+    "video-tags-and-categories",
+    "find-videos-by-category"
+  ],
+  "all_guides": [
+    "milf-vs-mature",
+    "asian-vs-japanese",
+    "bbw-vs-big-ass-vs-big-tits",
+    "cumshot-vs-creampie",
+    "pov-videos-explained",
+    "amateur-videos-explained",
+    "blonde-vs-brunette",
+    "japanese-video-categories",
+    "mature-video-categories",
+    "how-xurvexa-categories-work",
+    "video-tags-and-categories",
+    "find-videos-by-category"
+  ],
+  "word_counts": {
+    "pov-videos-explained": 671,
+    "amateur-videos-explained": 624,
+    "blonde-vs-brunette": 666,
+    "japanese-video-categories": 621,
+    "mature-video-categories": 626,
+    "how-xurvexa-categories-work": 675,
+    "video-tags-and-categories": 653,
+    "find-videos-by-category": 677
+  },
+  "meta_lengths": {
+    "pov-videos-explained": 152,
+    "amateur-videos-explained": 150,
+    "blonde-vs-brunette": 150,
+    "japanese-video-categories": 145,
+    "mature-video-categories": 150,
+    "how-xurvexa-categories-work": 150,
+    "video-tags-and-categories": 149,
+    "find-videos-by-category": 129
+  },
+  "category_to_guide_mappings": {
+    "amateur": [
+      "amateur-videos-explained",
+      "pov-videos-explained"
+    ],
+    "milf": [
+      "milf-vs-mature",
+      "mature-video-categories"
+    ],
+    "asian": [
+      "asian-vs-japanese",
+      "japanese-video-categories"
+    ],
+    "pov": [
+      "pov-videos-explained",
+      "amateur-videos-explained"
+    ],
+    "blonde": [
+      "blonde-vs-brunette"
+    ],
+    "brunette": [
+      "blonde-vs-brunette"
+    ],
+    "big-tits": [
+      "bbw-vs-big-ass-vs-big-tits"
+    ],
+    "cumshot": [
+      "cumshot-vs-creampie"
+    ],
+    "mature": [
+      "milf-vs-mature",
+      "mature-video-categories"
+    ],
+    "japanese": [
+      "asian-vs-japanese",
+      "japanese-video-categories"
+    ],
+    "big-ass": [
+      "bbw-vs-big-ass-vs-big-tits"
+    ],
+    "creampie": [
+      "cumshot-vs-creampie"
+    ],
+    "bbw": [
+      "bbw-vs-big-ass-vs-big-tits"
+    ],
+    "massage": [
+      "pov-videos-explained"
+    ]
+  },
+  "stage_files": [
+    {
+      "path": "stage/config/guide-seo.php",
+      "sha256": "fc2e9574b82db8ee881bd6043465e90185405432b551eccb0717fbdc88ecd91a",
+      "size": 85437
+    }
+  ]
+}

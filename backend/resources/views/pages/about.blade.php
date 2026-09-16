@@ -84,16 +84,26 @@
     <section class="content-panel">
 
         <h2>
-            Platform development
+            Platform status
         </h2>
 
         <p>
 
-            Xurvexa is currently being prepared
-            for production launch. Additional
-            platform information and policies
-            will be published before the service
-            becomes publicly available.
+            Xurvexa is a live video discovery
+            platform that organizes and presents
+            externally embedded adult video content
+            from supported third-party providers.
+
+        </p>
+
+        <p>
+
+            We continuously improve content
+            discovery, categorization, platform
+            performance, compliance features and
+            monetization while keeping video
+            playback provided by external embed
+            sources.
 
         </p>
 

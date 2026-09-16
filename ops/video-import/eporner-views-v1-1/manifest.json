@@ -1,0 +1,37 @@
+{
+  "package": "xurvexa-eporner-views-v1-1",
+  "purpose": "Set new and existing Eporner videos.views to 0 so Xurvexa views remain site-local.",
+  "files": [
+    {
+      "file": "README.txt",
+      "sha256": "442cb146fc3d17ebaee1c79a1afd95e674f9e8140c1b19b3939f5a6935acbc4f",
+      "size": 832
+    },
+    {
+      "file": "deploy-eporner-views-v1-1.ps1",
+      "sha256": "d327bde878a232e0c569b7e9d0433b5dec37aa933c6ee42897444d5e5429218f",
+      "size": 3789
+    },
+    {
+      "file": "deploy-eporner-views-v1-1.sh",
+      "sha256": "1300fb667f26841bc1175e881b9c10b3852e0a4530bd9a9ca821457e191d7855",
+      "size": 4830
+    },
+    {
+      "file": "eporner-csv-builder.py",
+      "sha256": "fb83e94ca78ac66f364054d4f7d332f2b4befcf16b1991bb68df70329e2d9e3f",
+      "size": 17602
+    },
+    {
+      "file": "reset-eporner-views.php",
+      "sha256": "fbec18f0eba0aa95bc47613b46ecd67bb5f0737bbd8342bbf3e988c0aa21e983",
+      "size": 2996
+    }
+  ],
+  "production_replace": [
+    "/var/www/project-ares/ops/video-import/eporner-csv-builder.py"
+  ],
+  "windows_replace": [
+    "C:\\Projects\\Project-Ares\\ops\\video-import\\eporner-csv-builder.py"
+  ]
+}

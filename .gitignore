@@ -1,9 +1,45 @@
+# Dependencies
 node_modules/
 vendor/
+
+# Environment / secrets
 .env
 .env.*
+!.env.example
+
+# Runtime storage / cache
 storage/
 bootstrap/cache/
+tmp/
+
+# IDE
 .idea/
 .vscode/settings.json
-tmp/
+
+# Python runtime
+__pycache__/
+*.py[cod]
+
+# Root backup archives and recovery data
+/backups/
+
+# Generated / packaged artifacts
+*.dump
+*.enc
+*.zip
+*.tar.gz
+*.tgz
+
+# Video import runtime state
+/ops/video-import/batches/
+/ops/video-import/backups/
+/ops/video-import/*.lock
+/ops/video-import/*.csv
+/ops/video-import/existing-xvideos-ids.txt
+/ops/video-import/xvideos-urls*.txt
+
+# Video import Python cache
+/ops/video-import/**/__pycache__/
+
+# Category-site worktree is versioned separately from the main Xurvexa repo
+/category-sites/

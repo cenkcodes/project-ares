@@ -1,0 +1,25 @@
+{
+  "package": "xurvexa-eporner-ts-guard-v1-3",
+  "files": {
+    "eporner-api-collector.py": {
+      "sha256": "0b67be80670a2abe4a76a90cd982abfc618627060a03e92b58a787b5d6de6d6d",
+      "bytes": 11975
+    },
+    "eporner-csv-builder.py": {
+      "sha256": "28b2d0c7cf449a06f0a8634380f1c44912250f8ebb1a21c0b5c6c59818e42f46",
+      "bytes": 19292
+    },
+    "deploy-eporner-ts-guard-v1-3.sh": {
+      "sha256": "e660859446aa8de2e00764cac11d8fb22c1563c0c97f68b56f189e7251cb4eb6",
+      "bytes": 8486
+    },
+    "deploy-eporner-ts-guard-v1-3.ps1": {
+      "sha256": "3d4909f58bfb4764154a5557612528c9d1897dd57137235ff3ff8bd0278153bb",
+      "bytes": 2479
+    },
+    "README.txt": {
+      "sha256": "d22633197c9b98617fa0d3925f33f3c229807be2f41ff46901892244888812a4",
+      "bytes": 913
+    }
+  }
+}

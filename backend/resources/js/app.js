@@ -1,4 +1,4 @@
-
+﻿import './video-exoclick-banner-driver';
 
 import Alpine from 'alpinejs';
 

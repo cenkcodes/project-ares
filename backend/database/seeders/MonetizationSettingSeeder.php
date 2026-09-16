@@ -19,27 +19,36 @@ class MonetizationSettingSeeder extends Seeder
             ],
             [
                 /*
-                 * Global monetization.
+                 * Global monetization master switch.
+                 *
+                 * Production launch starts fail-closed.
+                 *
+                 * This must remain false until:
+                 * - approved ad networks exist,
+                 * - public placement IDs are configured,
+                 * - frontend drivers are verified,
+                 * - advertising consent gating is verified.
                  */
-                'master_enabled' => true,
+                'master_enabled' => false,
 
                 /*
-                 * Default launch strategy.
+                 * Default strategy once monetization
+                 * is intentionally enabled.
                  */
                 'profile' =>
                     MonetizationSetting::PROFILE_BALANCED,
 
                 /*
                  * Device-level advertising.
+                 *
+                 * These are subordinate to
+                 * master_enabled.
                  */
                 'mobile_ads_enabled' => true,
                 'desktop_ads_enabled' => true,
 
                 /*
                  * Native advertising.
-                 *
-                 * One sponsored/native placement
-                 * after every 12 organic video cards.
                  */
                 'native_ads_enabled' => true,
                 'native_ad_interval' => 12,
@@ -50,14 +59,9 @@ class MonetizationSettingSeeder extends Seeder
                 'banner_ads_enabled' => true,
 
                 /*
-                 * Xurvexa pre-roll.
+                 * Xurvexa-controlled pre-roll.
                  *
-                 * Enabled globally, but provider-level
-                 * rules may suppress it.
-                 *
-                 * XVideos currently has its own player
-                 * advertising, so its provider policy
-                 * disables Xurvexa pre-roll.
+                 * Provider-level policy may suppress it.
                  */
                 'preroll_enabled' => true,
 
@@ -65,16 +69,11 @@ class MonetizationSettingSeeder extends Seeder
                     true,
 
                 /*
-                 * User experience protection.
+                 * User-experience protection.
                  */
                 'preroll_skip_after_seconds' => 5,
                 'preroll_max_per_session' => 2,
                 'preroll_cooldown_minutes' => 30,
-
-                /*
-                 * Protect the user's first video
-                 * interaction from Xurvexa pre-roll.
-                 */
                 'preroll_on_first_video' => false,
 
                 /*
@@ -83,14 +82,10 @@ class MonetizationSettingSeeder extends Seeder
                 'midroll_enabled' => false,
 
                 /*
-                 * Popunder starts conservatively.
+                 * Popunder configuration.
                  *
-                 * Eligible after 2 meaningful
-                 * interactions.
-                 *
-                 * Maximum:
-                 * - 1 per session
-                 * - 1 per 24 hours
+                 * This remains subordinate to
+                 * master_enabled.
                  */
                 'popunder_enabled' => true,
 
@@ -108,10 +103,6 @@ class MonetizationSettingSeeder extends Seeder
 
                 /*
                  * Interstitial starts disabled.
-                 *
-                 * Infrastructure exists so it may
-                 * later be enabled through controlled
-                 * A/B testing.
                  */
                 'interstitial_enabled' => false,
 
@@ -125,39 +116,30 @@ class MonetizationSettingSeeder extends Seeder
 
                 /*
                  * Shared disruptive-ad budget.
-                 *
-                 * Pre-roll, popunder and interstitial
-                 * consume this budget.
-                 *
-                 * Native and banner advertising do not.
                  */
                 'session_interruption_budget' => 2,
 
                 /*
-                 * Never start sound-on autoplay
-                 * advertising by default.
+                 * Sound-on autoplay advertising
+                 * remains disabled.
                  */
                 'autoplay_sound_ads_enabled' => false,
 
                 /*
-                 * Keep event tracking enabled so the
-                 * system can later optimize:
-                 *
-                 * - revenue per session
-                 * - play rate
-                 * - exit rate
-                 * - videos per session
-                 * - return rate
-                 * - ad frequency experiments
+                 * Keep ad-event collection available
+                 * for future performance analysis.
                  */
                 'ad_event_tracking_enabled' => true,
 
+                /*
+                 * Operational note.
+                 */
                 'notes' =>
-                    'Balanced launch profile. '
-                    . 'Prioritizes native and banner revenue, '
-                    . 'provider-aware pre-roll, and conservative '
-                    . 'popunder frequency. Mid-roll and '
-                    . 'interstitial advertising start disabled.',
+                    'Production fail-closed launch profile. '
+                    . 'Global monetization remains disabled until '
+                    . 'approved ad networks, production placement IDs, '
+                    . 'frontend drivers, and advertising consent gating '
+                    . 'have all been verified.',
             ],
         );
     }

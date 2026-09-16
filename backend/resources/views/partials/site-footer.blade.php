@@ -29,6 +29,10 @@
                     About
                 </a>
 
+                <a href="{{ route('guides.index') }}">
+                    Guides
+                </a>
+
                 <a href="{{ route('pages.contact') }}">
                     Contact
                 </a>
@@ -37,12 +41,20 @@
                     Privacy
                 </a>
 
+                <a href="{{ route('pages.cookie-policy') }}">
+                    Cookie Policy
+                </a>
+
                 <a href="{{ route('pages.terms') }}">
                     Terms
                 </a>
 
-                <a href="{{ route('pages.content-removal') }}">
-                    Content Removal
+                <a href="{{ route('pages.record-keeping') }}">
+                    18 U.S.C. ?2257
+                </a>
+
+                <a href="{{ route('pages.content-removal') }}#copyright-dmca">
+                    DMCA / Content Removal
                 </a>
 
             </nav>

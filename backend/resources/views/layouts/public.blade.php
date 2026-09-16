@@ -22,6 +22,11 @@
         content="{{ $robotsContent ?? 'noindex,nofollow' }}"
     >
 
+    <meta
+        name="rating"
+        content="adult"
+    >
+
     <link
         rel="canonical"
         href="{{ $canonicalUrl ?? url()->current() }}"
@@ -711,6 +716,8 @@
     @yield('content')
 
     @include('partials.site-footer')
+
+    @include('partials.cookie-consent')
 
 </body>
 

@@ -58,6 +58,15 @@ class XurvexaMonetizationClient {
             this.handleMeaningfulInteraction.bind(
                 this
             );
+
+        this.boundConsentChangedHandler =
+            this.handleConsentChanged.bind(
+                this
+            );
+
+        this.interactionsBound = false;
+        this.consentListenerBound = false;
+        this.advertisingConsentActive = false;
     }
 
     isConfigured() {
@@ -83,7 +92,118 @@ class XurvexaMonetizationClient {
         ).matches;
     }
 
+    hasAdvertisingConsent() {
+        const consent =
+            window.XurvexaConsent;
+
+        if (
+            !consent ||
+            typeof consent.has !== 'function'
+        ) {
+            return false;
+        }
+
+        try {
+            return consent.has(
+                'advertising'
+            ) === true;
+        } catch {
+            return false;
+        }
+    }
+
+    assertAdvertisingConsent() {
+        if (!this.hasAdvertisingConsent()) {
+            throw new Error(
+                'Advertising consent is required.'
+            );
+        }
+    }
+
+    bindConsentChanges() {
+        if (this.consentListenerBound) {
+            return;
+        }
+
+        window.addEventListener(
+            'xurvexa:consent-changed',
+            this.boundConsentChangedHandler
+        );
+
+        this.consentListenerBound = true;
+    }
+
+    unbindConsentChanges() {
+        if (!this.consentListenerBound) {
+            return;
+        }
+
+        window.removeEventListener(
+            'xurvexa:consent-changed',
+            this.boundConsentChangedHandler
+        );
+
+        this.consentListenerBound = false;
+    }
+
+    handleConsentChanged() {
+        this.applyAdvertisingConsentState();
+    }
+
+    applyAdvertisingConsentState() {
+        const hadConsent =
+            this.advertisingConsentActive;
+
+        const hasConsent =
+            this.hasAdvertisingConsent();
+
+        this.advertisingConsentActive =
+            hasConsent;
+
+        if (!hasConsent) {
+            this.unbindMeaningfulInteractions();
+            this.clearAllPendingDecisions();
+
+            if (hadConsent) {
+                this.dispatchDecisionEvent(
+                    'xurvexa:monetization-consent-revoked',
+                    {}
+                );
+            }
+
+            return false;
+        }
+
+        this.bindMeaningfulInteractions();
+
+        if (!hadConsent) {
+            this.dispatchDecisionEvent(
+                'xurvexa:monetization-consent-granted',
+                {}
+            );
+
+            this.prefetchConfiguredDecisions()
+                .catch(() => {
+                    /*
+                     * Consent-triggered prefetch failures
+                     * must never affect page usability.
+                     */
+                });
+        }
+
+        return true;
+    }
+
+    clearAllPendingDecisions() {
+        this.pendingDecisions.clear();
+        this.decisionRequests.clear();
+    }
+
     bindMeaningfulInteractions() {
+        if (this.interactionsBound) {
+            return;
+        }
+
         document.addEventListener(
             'click',
             this.boundInteractionHandler,
@@ -91,9 +211,15 @@ class XurvexaMonetizationClient {
                 capture: true,
             }
         );
+
+        this.interactionsBound = true;
     }
 
     unbindMeaningfulInteractions() {
+        if (!this.interactionsBound) {
+            return;
+        }
+
         document.removeEventListener(
             'click',
             this.boundInteractionHandler,
@@ -101,6 +227,8 @@ class XurvexaMonetizationClient {
                 capture: true,
             }
         );
+
+        this.interactionsBound = false;
     }
 
     handleMeaningfulInteraction(event) {
@@ -185,6 +313,10 @@ class XurvexaMonetizationClient {
     async recordMeaningfulInteraction(
         options = {}
     ) {
+        if (!this.hasAdvertisingConsent()) {
+            return null;
+        }
+
         const now = Date.now();
 
         if (
@@ -210,6 +342,8 @@ class XurvexaMonetizationClient {
         format,
         options = {}
     ) {
+        this.assertAdvertisingConsent();
+
         const context =
             this.resolveDecisionContext(
                 options
@@ -237,6 +371,8 @@ class XurvexaMonetizationClient {
         format,
         options = {}
     ) {
+        this.assertAdvertisingConsent();
+
         this.assertFormat(
             format
         );
@@ -322,6 +458,18 @@ class XurvexaMonetizationClient {
             key
         );
 
+        if (!this.hasAdvertisingConsent()) {
+            this.dispatchDecisionEvent(
+                'xurvexa:monetization-decision-consent-blocked',
+                {
+                    format,
+                    context,
+                }
+            );
+
+            return null;
+        }
+
         if (
             !decision ||
             decision.show !== true
@@ -374,6 +522,10 @@ class XurvexaMonetizationClient {
     }
 
     async prefetchConfiguredDecisions() {
+        if (!this.hasAdvertisingConsent()) {
+            return [];
+        }
+
         if (
             this.configuredPrefetchFormats.length
             === 0
@@ -398,6 +550,12 @@ class XurvexaMonetizationClient {
         format,
         options = {}
     ) {
+        if (!this.hasAdvertisingConsent()) {
+            this.clearAllPendingDecisions();
+
+            return null;
+        }
+
         this.assertFormat(
             format
         );
@@ -431,6 +589,12 @@ class XurvexaMonetizationClient {
         format,
         options = {}
     ) {
+        if (!this.hasAdvertisingConsent()) {
+            this.clearAllPendingDecisions();
+
+            return null;
+        }
+
         this.assertFormat(
             format
         );
@@ -543,6 +707,12 @@ class XurvexaMonetizationClient {
     }
 
     pendingDecisionCount() {
+        if (!this.hasAdvertisingConsent()) {
+            this.clearAllPendingDecisions();
+
+            return 0;
+        }
+
         this.clearExpiredPendingDecisions();
 
         return this.pendingDecisions.size;
@@ -622,6 +792,8 @@ class XurvexaMonetizationClient {
         decision,
         options = {}
     ) {
+        this.assertAdvertisingConsent();
+
         this.assertDecision(
             decision
         );
@@ -669,6 +841,8 @@ class XurvexaMonetizationClient {
         payload,
         options = {}
     ) {
+        this.assertAdvertisingConsent();
+
         if (!this.isConfigured()) {
             throw new Error(
                 'Monetization client is not configured.'
@@ -1027,7 +1201,7 @@ function bootXurvexaMonetization() {
         return;
     }
 
-    client.bindMeaningfulInteractions();
+    client.bindConsentChanges();
 
     window.XurvexaMonetization =
         client;
@@ -1043,14 +1217,7 @@ function bootXurvexaMonetization() {
         )
     );
 
-    client
-        .prefetchConfiguredDecisions()
-        .catch(() => {
-            /*
-             * Decision prefetch failures must
-             * never affect page usability.
-             */
-        });
+    client.applyAdvertisingConsentState();
 }
 
 if (

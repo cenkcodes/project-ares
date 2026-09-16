@@ -1,0 +1,98 @@
+{!! '<?xml version="1.0" encoding="UTF-8"?>' !!}
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+    <url>
+
+        <loc>{{ route('home') }}</loc>
+
+        @if($siteLastModified)
+
+            <lastmod>{{ $siteLastModified->toAtomString() }}</lastmod>
+
+        @endif
+
+    </url>
+
+    <url>
+
+        <loc>{{ route('videos.index') }}</loc>
+
+        @if($siteLastModified)
+
+            <lastmod>{{ $siteLastModified->toAtomString() }}</lastmod>
+
+        @endif
+
+    </url>
+
+    <url>
+
+        <loc>{{ route('guides.index') }}</loc>
+
+        @if($latestGuideUpdate)
+
+            <lastmod>{{ $latestGuideUpdate }}</lastmod>
+
+        @endif
+
+    </url>
+
+    @foreach($guides as $guide)
+
+        <url>
+
+            <loc>{{ route(
+                'guides.show',
+                ['slug' => $guide['slug']]
+            ) }}</loc>
+
+            @if($guide['updated_at'])
+
+                <lastmod>{{ $guide['updated_at'] }}</lastmod>
+
+            @endif
+
+        </url>
+
+    @endforeach
+
+    @foreach($categories as $category)
+
+        <url>
+
+            <loc>{{ route(
+                'videos.category',
+                $category->slug
+            ) }}</loc>
+
+            @if($category->updated_at)
+
+                <lastmod>{{ $category->updated_at->toAtomString() }}</lastmod>
+
+            @endif
+
+        </url>
+
+    @endforeach
+
+    @foreach($videos as $video)
+
+        <url>
+
+            <loc>{{ route(
+                'videos.show',
+                $video->slug
+            ) }}</loc>
+
+            @if($video->updated_at)
+
+                <lastmod>{{ $video->updated_at->toAtomString() }}</lastmod>
+
+            @endif
+
+        </url>
+
+    @endforeach
+
+</urlset>

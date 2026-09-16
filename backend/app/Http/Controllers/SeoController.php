@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\SeoTopic;
 use App\Models\Video;
-use Illuminate\Http\Response;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
 use App\Models\VideoSeoContent;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -36,15 +36,30 @@ class SeoController extends Controller
             ->orderBy('id')
             ->get();
 
-        $videos = Video::query()
-            ->where('is_active', true)
-            ->whereHas('seoContent', fn (Builder $query) => $this->requirePublishedSeo($query))
-            ->select([
-                'slug',
-                'updated_at',
-            ])
-            ->orderBy('id')
-            ->get();
+        $guides =
+            collect(
+                config('guide-seo.guides', [])
+            )
+                ->filter(
+                    fn ($guide): bool =>
+                        is_array($guide) &&
+                        ($guide['is_active'] ?? false) === true
+                )
+                ->map(
+                    fn ($guide, $slug): array => [
+                        'slug' => (string) $slug,
+                        'updated_at' =>
+                            (string) ($guide['updated_at'] ?? ''),
+                    ]
+                )
+                ->values();
+
+        $latestGuideUpdate =
+            $guides
+                ->pluck('updated_at')
+                ->filter()
+                ->sortDesc()
+                ->first();
 
         $latestCategoryUpdate =
             $categories
@@ -54,11 +69,13 @@ class SeoController extends Controller
                 ->first();
 
         $latestVideoUpdate =
-            $videos
-                ->pluck('updated_at')
-                ->filter()
-                ->sortDesc()
-                ->first();
+            Video::query()
+                ->where('is_active', true)
+                ->orderByDesc('updated_at')
+                ->first([
+                    'updated_at',
+                ])
+                ?->updated_at;
 
         $siteLastModified =
             collect([
@@ -78,8 +95,11 @@ class SeoController extends Controller
                     'categories' =>
                         $categories,
 
-                    'videos' =>
-                        $videos,
+                    'guides' =>
+                        $guides,
+
+                    'latestGuideUpdate' =>
+                        $latestGuideUpdate,
 
                     'siteLastModified' =>
                         $siteLastModified,
@@ -297,6 +317,7 @@ class SeoController extends Controller
             ]
         );
     }
+
     private function videoSitemapIndex(): StreamedResponse
     {
         $eligibleCount =

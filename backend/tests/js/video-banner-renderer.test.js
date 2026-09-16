@@ -52,6 +52,22 @@ globalThis.window = {
     XurvexaVideoAdAdapter: null,
     XurvexaBannerRenderer: null,
 
+    XurvexaConsent: {
+        advertising: true,
+
+        has(category) {
+            if (category === 'necessary') {
+                return true;
+            }
+
+            if (category === 'advertising') {
+                return this.advertising;
+            }
+
+            return false;
+        },
+    },
+
     dispatchedEvents: [],
 
     listeners:
@@ -96,6 +112,25 @@ globalThis.window = {
             listeners
         );
     },
+
+    removeEventListener(
+        type,
+        listener
+    ) {
+        const listeners =
+            this.listeners.get(
+                type
+            )
+            ?? [];
+
+        this.listeners.set(
+            type,
+            listeners.filter(
+                (candidate) =>
+                    candidate !== listener
+            )
+        );
+    },
 };
 
 globalThis.document = {
@@ -117,6 +152,17 @@ const {
     XurvexaBannerRenderer,
 } = await import(
     '../../resources/js/video-banner-renderer.js'
+);
+
+test.beforeEach(
+    () => {
+        window.XurvexaConsent.advertising =
+            true;
+
+        window.dispatchedEvents = [];
+        window.listeners =
+            new Map();
+    }
 );
 
 function createAdapter(
@@ -694,5 +740,237 @@ test(
             calls.recordClick[0],
             slot
         );
+    }
+);
+
+test(
+    'renderer fails closed when advertising consent is denied',
+    async () => {
+        window.XurvexaConsent.advertising =
+            false;
+
+        const {
+            adapter,
+            calls,
+        } = createAdapter();
+
+        const renderer =
+            new XurvexaBannerRenderer(
+                adapter
+            );
+
+        let renderCalls = 0;
+
+        renderer.registerDriver(
+            'test',
+            {
+                async render() {
+                    renderCalls++;
+
+                    return true;
+                },
+            }
+        );
+
+        const slot =
+            createSlot();
+
+        slot.innerHTML =
+            '<div>Stale Ad</div>';
+
+        const result =
+            await renderer.renderSlot(
+                slot
+            );
+
+        assert.equal(
+            result,
+            null
+        );
+
+        assert.equal(
+            renderCalls,
+            0
+        );
+
+        assert.equal(
+            calls.pendingDecision.length,
+            0
+        );
+
+        assert.equal(
+            calls.confirmRendered.length,
+            0
+        );
+
+        assert.equal(
+            slot.innerHTML,
+            ''
+        );
+
+        assert.equal(
+            slot.attributes[
+                'aria-hidden'
+            ],
+            'true'
+        );
+    }
+);
+
+test(
+    'banner click is blocked when advertising consent is denied',
+    async () => {
+        window.XurvexaConsent.advertising =
+            false;
+
+        const {
+            adapter,
+            calls,
+        } = createAdapter();
+
+        const renderer =
+            new XurvexaBannerRenderer(
+                adapter
+            );
+
+        const slot =
+            createSlot();
+
+        const result =
+            await renderer.recordClick(
+                slot
+            );
+
+        assert.equal(
+            result,
+            null
+        );
+
+        assert.equal(
+            calls.recordClick.length,
+            0
+        );
+    }
+);
+
+test(
+    'consent revocation clears existing banner creative',
+    () => {
+        const {
+            adapter,
+        } = createAdapter();
+
+        const slot =
+            createSlot();
+
+        slot.innerHTML =
+            '<div>Rendered Ad</div>';
+
+        slot.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
+        const root = {
+            querySelectorAll() {
+                return [
+                    slot,
+                ];
+            },
+        };
+
+        const renderer =
+            new XurvexaBannerRenderer(
+                adapter,
+                root
+            );
+
+        window.XurvexaConsent.advertising =
+            false;
+
+        renderer.handleConsentChanged();
+
+        assert.equal(
+            slot.innerHTML,
+            ''
+        );
+
+        assert.equal(
+            slot.attributes[
+                'aria-hidden'
+            ],
+            'true'
+        );
+
+        assert.equal(
+            window.dispatchedEvents.some(
+                (event) =>
+                    event.type ===
+                    'xurvexa:banner-renderer-consent-revoked'
+            ),
+            true
+        );
+    }
+);
+
+test(
+    'renderer treats missing consent API as denied',
+    async () => {
+        const consent =
+            window.XurvexaConsent;
+
+        window.XurvexaConsent =
+            null;
+
+        try {
+            const {
+                adapter,
+                calls,
+            } = createAdapter();
+
+            const renderer =
+                new XurvexaBannerRenderer(
+                    adapter
+                );
+
+            let renderCalls = 0;
+
+            renderer.registerDriver(
+                'test',
+                {
+                    async render() {
+                        renderCalls++;
+
+                        return true;
+                    },
+                }
+            );
+
+            const slot =
+                createSlot();
+
+            const result =
+                await renderer.renderSlot(
+                    slot
+                );
+
+            assert.equal(
+                result,
+                null
+            );
+
+            assert.equal(
+                renderCalls,
+                0
+            );
+
+            assert.equal(
+                calls.pendingDecision.length,
+                0
+            );
+        } finally {
+            window.XurvexaConsent =
+                consent;
+        }
     }
 );

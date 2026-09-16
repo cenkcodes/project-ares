@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+
+Sitemap: https://xurvexa.com/sitemap.xml
+Sitemap: https://xurvexa.com/video-sitemap.xml

@@ -22,7 +22,8 @@
 
     if ($activeCategory) {
         $pageDescription =
-            $activeCategory->description
+            $activeCategory->meta_description
+                ?: $activeCategory->description
                 ?: 'Browse ' .
                     $activeCategory->name .
                     ' videos on Xurvexa.';
@@ -80,6 +81,45 @@
     $ogImageAlt =
         ($activeCategory?->name ?? 'Xurvexa') .
         ' video thumbnail';
+
+    $guideDefinitions =
+        collect(
+            config('guide-seo.guides', [])
+        );
+
+    $relatedGuideSlugs =
+        $activeCategory
+            ? config(
+                'guide-seo.category_guides.' .
+                $activeCategory->slug,
+                []
+            )
+            : [];
+
+    $relatedGuides =
+        collect($relatedGuideSlugs)
+            ->map(
+                function ($slug) use ($guideDefinitions) {
+                    $guide =
+                        $guideDefinitions->get($slug);
+
+                    if (
+                        !is_array($guide) ||
+                        ($guide['is_active'] ?? false) !== true
+                    ) {
+                        return null;
+                    }
+
+                    return array_merge(
+                        $guide,
+                        [
+                            'slug' => (string) $slug,
+                        ]
+                    );
+                }
+            )
+            ->filter()
+            ->values();
 
     $showHeaderSearch = false;
 @endphp
@@ -247,12 +287,70 @@
 
     .category-description {
         margin:
-            -12px 0 28px;
+            -12px 0 22px;
 
         color: #888;
 
         font-size: 14px;
         line-height: 1.6;
+    }
+
+    .related-categories {
+        margin:
+            0 0 28px;
+
+        padding:
+            16px 18px;
+
+        border:
+            1px solid #242424;
+
+        border-radius: 9px;
+
+        background: #121212;
+    }
+
+    .related-categories-title {
+        margin:
+            0 0 10px;
+
+        color: #777;
+
+        font-size: 12px;
+        font-weight: 700;
+
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .related-categories-links {
+        display: flex;
+        flex-wrap: wrap;
+
+        gap: 8px;
+    }
+
+    .related-category-link {
+        padding:
+            7px 11px;
+
+        border:
+            1px solid #2d2d2d;
+
+        border-radius: 999px;
+
+        background: #1b1b1b;
+        color: #bbb;
+
+        font-size: 12px;
+        line-height: 1.2;
+    }
+
+    .related-category-link:hover {
+        border-color: #555;
+
+        background: #262626;
+        color: #fff;
     }
 
     .result-info {
@@ -278,6 +376,77 @@
 
     .pagination {
         margin-top: 40px;
+
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination-nav {
+        display: flex;
+        flex-wrap: wrap;
+
+        justify-content: center;
+        align-items: center;
+
+        gap: 6px;
+    }
+
+    .pagination-link,
+    .pagination-current,
+    .pagination-disabled,
+    .pagination-ellipsis {
+        min-width: 38px;
+        height: 38px;
+
+        padding: 0 11px;
+
+        border:
+            1px solid #2e2e2e;
+
+        border-radius: 7px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #151515;
+        color: #bbb;
+
+        font-size: 13px;
+        line-height: 1;
+
+        text-decoration: none;
+    }
+
+    .pagination-link:hover {
+        border-color: #555;
+
+        background: #242424;
+        color: #fff;
+    }
+
+    .pagination-current {
+        border-color: #fff;
+
+        background: #fff;
+        color: #111;
+
+        font-weight: 700;
+    }
+
+    .pagination-disabled,
+    .pagination-ellipsis {
+        color: #555;
+
+        cursor: default;
+    }
+
+    .pagination-disabled {
+        opacity: 0.65;
+    }
+
+    .pagination-edge {
+        min-width: 86px;
     }
 
     .empty-state {
@@ -341,6 +510,25 @@
         .search-button,
         .clear-button {
             width: 100%;
+        }
+
+        .pagination-nav {
+            gap: 5px;
+        }
+
+        .pagination-link,
+        .pagination-current,
+        .pagination-disabled,
+        .pagination-ellipsis {
+            min-width: 34px;
+            height: 34px;
+
+            padding:
+                0 9px;
+        }
+
+        .pagination-edge {
+            min-width: 72px;
         }
 
     }
@@ -526,6 +714,93 @@
     @endif
 
 
+    @if(
+        $activeCategory &&
+        $relatedCategories->isNotEmpty()
+    )
+
+        <section
+            class="related-categories"
+            aria-labelledby="related-categories-title"
+        >
+
+            <h2
+                id="related-categories-title"
+                class="related-categories-title"
+            >
+                Related Categories
+            </h2>
+
+            <div class="related-categories-links">
+
+                @foreach(
+                    $relatedCategories
+                    as $relatedCategory
+                )
+
+                    <a
+                        class="related-category-link"
+                        href="{{ route(
+                            'videos.category',
+                            $relatedCategory->slug
+                        ) }}"
+                    >
+                        {{ $relatedCategory->name }} Videos
+                    </a>
+
+                @endforeach
+
+            </div>
+
+        </section>
+
+    @endif
+
+
+    @if($activeCategory)
+
+        <section
+            class="related-categories category-guides"
+            aria-labelledby="category-guides-title"
+        >
+
+            <h2
+                id="category-guides-title"
+                class="related-categories-title"
+            >
+                Xurvexa Guides
+            </h2>
+
+            <div class="related-categories-links">
+
+                @foreach($relatedGuides as $relatedGuide)
+
+                    <a
+                        class="related-category-link category-guide-link"
+                        href="{{ route(
+                            'guides.show',
+                            ['slug' => $relatedGuide['slug']]
+                        ) }}"
+                    >
+                        {{ $relatedGuide['h1'] }}
+                    </a>
+
+                @endforeach
+
+                <a
+                    class="related-category-link category-guides-all-link"
+                    href="{{ route('guides.index') }}"
+                >
+                    Explore All Guides
+                </a>
+
+            </div>
+
+        </section>
+
+    @endif
+
+
     @if($search !== '')
 
         <div class="result-info">
@@ -578,9 +853,154 @@
 
     @if($videos->hasPages())
 
+        @php
+            $currentPage =
+                $videos->currentPage();
+
+            $lastPage =
+                $videos->lastPage();
+
+            $paginationQuery =
+                request()->except('page');
+
+            $pageCandidates = [
+                1,
+                2,
+                $currentPage - 2,
+                $currentPage - 1,
+                $currentPage,
+                $currentPage + 1,
+                $currentPage + 2,
+                $lastPage - 1,
+                $lastPage,
+            ];
+
+            $paginationPages =
+                collect($pageCandidates)
+                    ->filter(
+                        fn ($page) =>
+                            $page >= 1 &&
+                            $page <= $lastPage
+                    )
+                    ->unique()
+                    ->sort()
+                    ->values();
+        @endphp
+
         <div class="pagination">
 
-            {{ $videos->links() }}
+            <nav
+                class="pagination-nav"
+                aria-label="Video pagination"
+            >
+
+                @if($videos->onFirstPage())
+
+                    <span
+                        class="pagination-disabled pagination-edge"
+                        aria-disabled="true"
+                    >
+                        Previous
+                    </span>
+
+                @else
+
+                    <a
+                        class="pagination-link pagination-edge"
+                        href="{{ $videos
+                            ->appends($paginationQuery)
+                            ->previousPageUrl() }}"
+                        rel="prev"
+                    >
+                        Previous
+                    </a>
+
+                @endif
+
+                @php
+                    $previousRenderedPage = null;
+                @endphp
+
+                @foreach(
+                    $paginationPages
+                    as $paginationPage
+                )
+
+                    @if(
+                        $previousRenderedPage !== null &&
+                        $paginationPage >
+                            $previousRenderedPage + 1
+                    )
+
+                        <span
+                            class="pagination-ellipsis"
+                            aria-hidden="true"
+                        >
+                            &hellip;
+                        </span>
+
+                    @endif
+
+                    @if(
+                        $paginationPage ===
+                        $currentPage
+                    )
+
+                        <span
+                            class="pagination-current"
+                            aria-current="page"
+                        >
+                            {{ $paginationPage }}
+                        </span>
+
+                    @else
+
+                        <a
+                            class="pagination-link"
+                            href="{{ $videos
+                                ->appends(
+                                    $paginationQuery
+                                )
+                                ->url(
+                                    $paginationPage
+                                ) }}"
+                        >
+                            {{ $paginationPage }}
+                        </a>
+
+                    @endif
+
+                    @php
+                        $previousRenderedPage =
+                            $paginationPage;
+                    @endphp
+
+                @endforeach
+
+                @if($videos->hasMorePages())
+
+                    <a
+                        class="pagination-link pagination-edge"
+                        href="{{ $videos
+                            ->appends($paginationQuery)
+                            ->nextPageUrl() }}"
+                        rel="next"
+                    >
+                        Next
+                    </a>
+
+                @else
+
+                    <span
+                        class="pagination-disabled pagination-edge"
+                        aria-disabled="true"
+                    >
+                        Next
+                    </span>
+
+                @endif
+
+            </nav>
 
         </div>
 

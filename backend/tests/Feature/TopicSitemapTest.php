@@ -38,10 +38,15 @@ class TopicSitemapTest extends TestCase
             $xml->registerXPathNamespace('s', 'http://www.sitemaps.org/schemas/sitemap/0.9');
             $locations = array_map(fn ($node) => (string) $node, $xml->xpath('//s:url/s:loc'));
 
-            foreach (['home', 'videos.index'] as $route) {
+            foreach (['home', 'videos.index', 'guides.index'] as $route) {
                 $this->assertContains(route($route), $locations);
             }
             $this->assertContains(route('videos.category', $category->slug), $locations);
+            foreach (config('guide-seo.guides', []) as $slug => $guide) {
+                if (is_array($guide) && ($guide['is_active'] ?? false) === true) {
+                    $this->assertContains(route('guides.show', $slug), $locations);
+                }
+            }
             foreach ($excluded as $topic) {
                 $this->assertNotContains(route('topics.show', $topic->slug), $locations);
             }
