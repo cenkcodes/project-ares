@@ -20,9 +20,9 @@ class VideoImportRunner
 
     private const PROVIDER_BATCH_SHA256 = [
         'xvideos' => 'f456cf0e0083e11b4fc8b12354475d77b997f6fe10713ccea34e0044c46ce333',
-        'eporner' => '6af038866edf286657a5eae5049ba275b31c82984f183573b53acd12a7f8c72c',
-        'xnxx' => 'd3f542c6692d8b4ec935fc8f196257ecb6ab1dd1fde9fc4c6091252188ac2da9',
-        'redtube' => 'f35f5e455e6e18dfdbb062712e9fe93146a211e61155368f61a117b6ce3cfa76',
+        'eporner' => 'db2eafb4772140904ae40767b69a46da3af5c368203b1e9c1fe3a22dc51037cf',
+        'xnxx' => '5c9d2caf1626aa014ad4d2bf4db976154727489adc9a5e30e7bdbf58df2b6a2a',
+        'redtube' => 'ace4003770350d9591d520654d76e2be83c31bd58bed871433ae5fd1979ad90b',
     ];
 
     public static function supportedSources(): array
@@ -171,9 +171,17 @@ class VideoImportRunner
                 '--max-pages=' . $job->max_pages,
             ];
 
-            if ($job->source === 'xvideos') {
-                $command[] = '--start-page=' . $job->start_page;
+            $startPage = (int) $job->start_page;
+
+            if ($startPage === 0) {
+                $startPage = match ($job->source) {
+                    'xvideos' => 0,
+                    'xnxx', 'redtube', 'eporner' => 1,
+                    default => 0,
+                };
             }
+
+            $command[] = '--start-page=' . $startPage;
 
             $this->appendLog(
                 $logPath,

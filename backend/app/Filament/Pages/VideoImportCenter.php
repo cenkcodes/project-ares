@@ -131,8 +131,8 @@ class VideoImportCenter extends Page
                             ->minValue(0)
                             ->maxValue(5000)
                             ->helperText(
-                                'XVideos paging offset. Use 0 for the first window; '
-                                . 'use 40 with Search Depth 40 to scan pages 40-79.'
+                                'Use 0 for the provider default first page. '
+                                . 'Use a positive value to start from that page explicitly.'
                             )
                             ->required(),
 
@@ -195,13 +195,10 @@ class VideoImportCenter extends Page
             ]);
         }
 
-        if (
-            $source !== 'xvideos'
-            && $startPage !== 0
-        ) {
+        if ($startPage < 0) {
             throw ValidationException::withMessages([
                 'data.start_page' =>
-                    'Non-zero Start Page is currently supported only for XVideos.',
+                    'Start Page cannot be negative.',
             ]);
         }
 
