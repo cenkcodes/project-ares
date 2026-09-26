@@ -195,12 +195,6 @@ class VideoImportCenter extends Page
             ]);
         }
 
-        if ($startPage < 0) {
-            throw ValidationException::withMessages([
-                'data.start_page' =>
-                    'Start Page cannot be negative.',
-            ]);
-        }
 
         if (! in_array($mode, ['import', 'prepare-only'], true)) {
             throw ValidationException::withMessages([
