@@ -19,7 +19,7 @@ class VideoImportRunner
     ];
 
     private const PROVIDER_BATCH_SHA256 = [
-        'xvideos' => '876b668171dd1744a7887390121edbe32522673d6cebefef6d1ebd8fa201d3a7',
+        'xvideos' => 'f456cf0e0083e11b4fc8b12354475d77b997f6fe10713ccea34e0044c46ce333',
         'eporner' => '6af038866edf286657a5eae5049ba275b31c82984f183573b53acd12a7f8c72c',
         'xnxx' => 'd3f542c6692d8b4ec935fc8f196257ecb6ab1dd1fde9fc4c6091252188ac2da9',
         'redtube' => 'f35f5e455e6e18dfdbb062712e9fe93146a211e61155368f61a117b6ce3cfa76',
@@ -170,6 +170,10 @@ class VideoImportRunner
                 '--target=' . $job->target_count,
                 '--max-pages=' . $job->max_pages,
             ];
+
+            if ($job->source === 'xvideos') {
+                $command[] = '--start-page=' . $job->start_page;
+            }
 
             $this->appendLog(
                 $logPath,
@@ -451,4 +455,3 @@ class VideoImportRunner
         File::append($path, $contents);
     }
 }
-

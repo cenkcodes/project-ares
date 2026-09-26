@@ -50,6 +50,7 @@ class VideoImportCenter extends Page
             'minimum_count' => 1000,
             'target_count' => 1200,
             'search_depth' => 'auto',
+            'start_page' => 0,
             'import_confirmation' => null,
         ]);
     }
@@ -124,6 +125,17 @@ class VideoImportCenter extends Page
                             ->required()
                             ->native(false),
 
+                        TextInput::make('start_page')
+                            ->label('Start Page')
+                            ->integer()
+                            ->minValue(0)
+                            ->maxValue(5000)
+                            ->helperText(
+                                'XVideos paging offset. Use 0 for the first window; '
+                                . 'use 40 with Search Depth 40 to scan pages 40-79.'
+                            )
+                            ->required(),
+
                         Select::make('import_confirmation')
                             ->label('Real Import Confirmation')
                             ->options([
@@ -161,9 +173,11 @@ class VideoImportCenter extends Page
         $minimum = (int) ($data['minimum_count'] ?? 0);
         $target = (int) ($data['target_count'] ?? 0);
         $searchDepth = (string) ($data['search_depth'] ?? 'auto');
+        $startPage = (int) ($data['start_page'] ?? 0);
         $importConfirmation = (string) (
             $data['import_confirmation'] ?? ''
         );
+
         $maxPages = $searchDepth === 'auto'
             ? 40
             : (int) $searchDepth;
@@ -172,6 +186,22 @@ class VideoImportCenter extends Page
             throw ValidationException::withMessages([
                 'data.target_count' =>
                     'Target Candidates cannot be lower than Minimum Accepted.',
+            ]);
+        }
+
+        if ($startPage < 0) {
+            throw ValidationException::withMessages([
+                'data.start_page' => 'Start Page cannot be negative.',
+            ]);
+        }
+
+        if (
+            $source !== 'xvideos'
+            && $startPage !== 0
+        ) {
+            throw ValidationException::withMessages([
+                'data.start_page' =>
+                    'Non-zero Start Page is currently supported only for XVideos.',
             ]);
         }
 
@@ -236,6 +266,7 @@ class VideoImportCenter extends Page
             'minimum_count' => $minimum,
             'target_count' => $target,
             'max_pages' => $maxPages,
+            'start_page' => $startPage,
             'status' => VideoImportJob::STATUS_QUEUED,
             'stage' => 'queued',
             'progress_current' => 0,

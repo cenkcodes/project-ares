@@ -73,6 +73,7 @@ function usage(): never
     line('  --delay=0.30');
     line('  --target=650  (candidate ceiling; all V8-passing videos up to this target are imported)');
     line('  --max-pages=40');
+    line('  --start-page=0');
     line('  --prepared-video=/path/to/prepared-videos.csv');
     line('  --prepared-terms=/path/to/prepared-source-terms.csv');
     exit(2);
@@ -89,6 +90,7 @@ function parseArguments(array $argv): array
         'delay' => DEFAULT_DELAY,
         'target' => null,
         'max-pages' => null,
+        'start-page' => 0,
         'prepared-video' => null,
         'prepared-terms' => null,
     ];
@@ -198,6 +200,12 @@ function parseArguments(array $argv): array
         abortRun('max-pages must be >= 1.', 2);
     }
 
+    $startPage = (int) $options['start-page'];
+
+    if ($startPage < 0) {
+        abortRun('start-page must be >= 0.', 2);
+    }
+
     $preparedVideo = $options['prepared-video'] !== null
         ? trim((string) $options['prepared-video'])
         : null;
@@ -222,6 +230,7 @@ function parseArguments(array $argv): array
         'delay' => $options['delay'],
         'target' => $target,
         'maxPages' => $maxPages,
+        'startPage' => $startPage,
         'preparedVideo' => $preparedVideo,
         'preparedTerms' => $preparedTerms,
     ];
@@ -918,6 +927,7 @@ $userId = $config['userId'];
 $delay = $config['delay'];
 $target = $config['target'];
 $maxPages = $config['maxPages'];
+$startPage = $config['startPage'];
 $preparedVideo = $config['preparedVideo'];
 $preparedTerms = $config['preparedTerms'];
 $preparedMode = $preparedVideo !== null;
@@ -981,6 +991,7 @@ kv(
 if (! $preparedMode) {
     kv('TARGET_CANDIDATES', $target);
     kv('MAX_PAGES', $maxPages);
+    kv('START_PAGE', $startPage);
     kv('EXPECTED_POLICY_VERSION', EXPECTED_POLICY_VERSION);
 }
 
@@ -1094,6 +1105,8 @@ if ($preparedMode) {
             $query,
             '--target',
             (string) $target,
+            '--start-page',
+            (string) $startPage,
             '--max-pages',
             (string) $maxPages,
             '--delay',
