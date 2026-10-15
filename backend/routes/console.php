@@ -59,3 +59,14 @@ Schedule::command(
     ->withoutOverlapping(
         180
     );
+
+Schedule::command(
+    'video-health:dispatch-scheduled'
+)
+    ->hourly()
+    ->timezone(
+        'UTC'
+    )
+    ->withoutOverlapping(
+        10
+    );

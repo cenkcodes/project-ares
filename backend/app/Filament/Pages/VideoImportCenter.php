@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\VideoImportJob;
 use App\Models\VideoProvider;
 use App\Services\VideoImportRunner;
+use App\Services\VideoWorkloadAdmission;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -14,8 +15,10 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 use UnitEnum;
 
 class VideoImportCenter extends Page
@@ -155,16 +158,6 @@ class VideoImportCenter extends Page
 
     public function startJob(): void
     {
-        if (VideoImportJob::query()->active()->exists()) {
-            Notification::make()
-                ->title('Another video import job is already active')
-                ->body('Wait for the current job to finish before starting another.')
-                ->warning()
-                ->send();
-
-            return;
-        }
-
         $data = $this->form->getState();
 
         $source = (string) ($data['source'] ?? '');
@@ -250,7 +243,7 @@ class VideoImportCenter extends Page
             ]);
         }
 
-        $job = VideoImportJob::query()->create([
+        $attributes = [
             'source' => $source,
             'category_slug' => $category,
             'mode' => $mode,
@@ -266,9 +259,44 @@ class VideoImportCenter extends Page
             'created_by' => is_numeric(auth()->id())
                 ? (int) auth()->id()
                 : null,
-        ]);
+        ];
 
-        LaunchVideoImportJob::dispatch($job->id);
+        $admission = app(VideoWorkloadAdmission::class);
+
+        try {
+            $reason = $admission->underExclusiveAdmission(function () use ($admission, $attributes): ?string {
+                $reason = $admission->activeReason();
+                if ($reason !== null) {
+                    return $reason;
+                }
+
+                $job = VideoImportJob::query()->create($attributes);
+                DB::afterCommit(fn () => LaunchVideoImportJob::dispatch($job->id));
+
+                return null;
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+            Notification::make()
+                ->title('Unable to queue video import job')
+                ->body('Please try again or contact an administrator.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        if ($reason !== null) {
+            Notification::make()
+                ->title($reason === VideoWorkloadAdmission::ACTIVE_IMPORT
+                    ? 'Another video import job is already active'
+                    : 'A video health run is already active')
+                ->body('Wait for the current job to finish before starting another.')
+                ->warning()
+                ->send();
+
+            return;
+        }
 
         $this->data['import_confirmation'] = null;
 
