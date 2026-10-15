@@ -7,6 +7,10 @@ return [
         'automatic_deactivation_enabled' => false,
     ],
 
+    'launcher' => [
+        'php_binary' => env('VIDEO_HEALTH_PHP_BINARY'),
+    ],
+
     'probe' => [
         'user_agent' => 'VideoHealthMonitor/1.0',
         'connect_timeout' => 5,

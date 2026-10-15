@@ -42,7 +42,7 @@ class VideoHealthLauncher
             $logPath = $root.DIRECTORY_SEPARATOR.'run-'.$runId.'.log';
             $log = $this->openPrivateFile($logPath);
             fclose($log);
-            $arguments = [$this->phpBinary ?? PHP_BINARY, base_path('artisan'), 'video-health:run', (string) $runId];
+            $arguments = [$this->resolvedPhpBinary(), base_path('artisan'), 'video-health:run', (string) $runId];
             // Persist intent before spawning. An interrupted/uncertain attempt must not retry blindly.
             try {
                 $this->reserve($guard);
@@ -112,6 +112,30 @@ class VideoHealthLauncher
             flock($guard, LOCK_UN);
             fclose($guard);
         }
+    }
+
+    private function resolvedPhpBinary(): string
+    {
+        foreach ([$this->phpBinary, config('video-health.launcher.php_binary'), PHP_BINARY] as $value) {
+            if ($value === null) {
+                continue;
+            }
+            if (!is_string($value)) {
+                throw new RuntimeException('Launcher PHP binary must be a string.');
+            }
+            $binary = trim($value);
+            if ($binary === '') {
+                continue;
+            }
+            if (preg_match('/[\x00-\x1F\x7F]/', $binary)) {
+                throw new RuntimeException('Launcher PHP binary contains invalid characters.');
+            }
+
+            // One executable argv value, never a command or shell expression.
+            return $binary;
+        }
+
+        throw new RuntimeException('Launcher PHP binary is unavailable.');
     }
 
     private function eligibleRun(int $runId): VideoHealthRun

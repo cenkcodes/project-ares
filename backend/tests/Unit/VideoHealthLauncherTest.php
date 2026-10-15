@@ -33,6 +33,7 @@ class VideoHealthLauncherTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['video-health.launcher.php_binary' => null]);
         $this->root = sys_get_temp_dir().DIRECTORY_SEPARATOR.'video-health-launcher-test-'.bin2hex(random_bytes(12));
         $this->launcher = new LauncherSpy($this->root);
     }
@@ -455,6 +456,68 @@ class VideoHealthLauncherTest extends TestCase
         $this->assertSecondLaunchRefused($run);
     }
 
+    #[DataProvider('binarySelections')]
+    public function test_php_binary_resolution_preserves_one_exact_executable_argument(?string $injected, mixed $configured, string $expected): void
+    {
+        config(['video-health.launcher.php_binary' => $configured]);
+        $this->launcher = new LauncherSpy($this->root, $injected);
+        $run = $this->runRecord(['provider' => 'xvideos', 'created_by' => 123, 'message' => 'untrusted executable suggestion']);
+        $result = $this->launcher->launch($run->id);
+        $this->assertTrue($result['launched']);
+        $this->assertSame([$expected, base_path('artisan'), 'video-health:run', (string) $run->id], $this->launcher->arguments);
+        $this->assertSame(1, $this->launcher->calls);
+        $this->assertSame('queued', $run->refresh()->status);
+    }
+
+    public static function binarySelections(): array
+    {
+        return [
+            ['custom-cli', 'configured-cli', 'custom-cli'],
+            ['  custom-cli  ', 'configured-cli', 'custom-cli'],
+            [null, 'configured-cli', 'configured-cli'],
+            ['', 'configured-cli', 'configured-cli'],
+            ['   ', 'configured-cli', 'configured-cli'],
+            [null, '  configured-cli  ', 'configured-cli'],
+            [null, '', PHP_BINARY],
+            [null, '   ', PHP_BINARY],
+            [null, null, PHP_BINARY],
+            [null, 'C:\\Program Files\\Portable PHP\\php.exe', 'C:\\Program Files\\Portable PHP\\php.exe'],
+            [null, '/opt/portable php/bin/php;literal$(value)', '/opt/portable php/bin/php;literal$(value)'],
+            ['custom-cli', false, 'custom-cli'],
+        ];
+    }
+
+    public function test_missing_launcher_config_preserves_php_binary_fallback(): void
+    {
+        $config = config('video-health');
+        unset($config['launcher']);
+        config(['video-health' => $config]);
+        $run = $this->runRecord();
+        $this->launcher->launch($run->id);
+        $this->assertSame(PHP_BINARY, $this->launcher->arguments[0]);
+    }
+
+    #[DataProvider('invalidBinaryValues')]
+    public function test_invalid_configured_binary_fails_closed_before_spawn_or_reservation(mixed $value): void
+    {
+        config(['video-health.launcher.php_binary' => $value]);
+        $run = $this->runRecord();
+        try {
+            $this->launcher->launch($run->id);
+            $this->fail('Expected invalid binary refusal.');
+        } catch (VideoHealthLaunchException $exception) {
+            $this->assertLaunchOutcome($exception, VideoHealthLaunchException::RECONCILIATION_REQUIRED);
+        }
+        $this->assertSame(0, $this->launcher->calls);
+        $this->assertSame('', file_get_contents($this->root.'/run-'.$run->id.'.lock'));
+        $this->assertSame('queued', $run->refresh()->status);
+    }
+
+    public static function invalidBinaryValues(): array
+    {
+        return [[false], [123], [[]], ["php\0other"], ["php\nother"]];
+    }
+
     private function assertLaunchOutcome(VideoHealthLaunchException $exception, string $outcome): void
     {
         $this->assertSame($outcome, $exception->outcome());
@@ -483,9 +546,9 @@ class LauncherSpy extends VideoHealthLauncher
     private bool $cleaningReservation = false;
     private bool $reservationFailureInjected = false;
 
-    public function __construct(private string $root)
+    public function __construct(private string $root, ?string $phpBinary = null)
     {
-        parent::__construct();
+        parent::__construct($phpBinary);
     }
 
     protected function launcherDirectory(): string
