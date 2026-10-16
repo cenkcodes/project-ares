@@ -52,7 +52,7 @@ return [
             'approved_hosts' => ['redtube.com', 'www.redtube.com', 'embed.redtube.com'],
             'dead_url_fragments' => [],
             'strong_dead_markers' => [],
-            'player_indicators' => [],
+            'player_indicators' => ['~\bmediaDefinitions\b~i'],
         ],
     ],
 ];

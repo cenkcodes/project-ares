@@ -194,6 +194,48 @@ test('classification is deterministic and does not change evidence', function ()
         ->and($evidence)->toBe($original);
 });
 
+test('RedTube mediaDefinitions preserves positive and conflicting evidence classification', function (int $status, string $body, string $expected) {
+    $evidence = array_replace($this->evidence, [
+        'provider' => 'redtube',
+        'effective_url' => 'https://embed.redtube.com/?id=190868481',
+        'http_status' => $status,
+        'body' => $body,
+    ]);
+
+    expect($this->classifier->classify($evidence))->toBe($expected);
+})->with([
+    'live marker' => [200, '{"mediaDefinitions": []}', 'PASS'],
+    'case insensitive marker' => [200, '{"MEDIADEFINITIONS": []}', 'PASS'],
+    'no marker' => [200, '<p>Unknown response</p>', 'REVIEW'],
+    'broken without marker' => [404, '<p>Not found</p>', 'BROKEN'],
+    'broken with marker conflicts' => [404, '{"mediaDefinitions": []}', 'REVIEW'],
+    'longer identifier is not the token' => [200, 'othermediaDefinitionsSuffix', 'REVIEW'],
+    'generic markers are insufficient' => [200, 'player embed iframe mp4 flashvars video_url', 'REVIEW'],
+]);
+
+test('RedTube mediaDefinitions never overrides unverifiable evidence', function (array $changes) {
+    $evidence = array_replace($this->evidence, [
+        'provider' => 'redtube',
+        'effective_url' => 'https://embed.redtube.com/?id=190868481',
+        'body' => '{"mediaDefinitions": []}',
+    ], $changes);
+
+    expect($this->classifier->classify($evidence))->toBe('UNVERIFIABLE');
+})->with([
+    'timeout' => [['timeout' => true]],
+    'transport' => [['transport_error' => 'TLS failure']],
+    'truncated' => [['truncated' => true]],
+    'incomplete' => [['response_complete' => false]],
+    'unapproved redirect' => [['redirect_approved' => false]],
+    'unapproved host' => [['effective_url' => 'https://embed.redtube.com.example/?id=190868481']],
+    '403' => [['http_status' => 403]],
+    '429' => [['http_status' => 429]],
+    ...array_combine(
+        array_map(fn (int $status): string => (string) $status, range(500, 599)),
+        array_map(fn (int $status): array => [['http_status' => $status]], range(500, 599)),
+    ),
+]);
+
 test('automatic deactivation defaults to disabled', function () {
     expect($this->configuration['rollout']['automatic_deactivation_enabled'])->toBeFalse();
 });
