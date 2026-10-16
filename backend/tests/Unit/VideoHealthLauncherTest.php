@@ -529,10 +529,186 @@ class VideoHealthLauncherTest extends TestCase
     {
         return [['truncate'], ['flush'], ['sync']];
     }
+
+    private function scheduledLauncher(array $responses): ScheduledLauncherSpy
+    {
+        $launcher = new ScheduledLauncherSpy($this->root);
+        $launcher->realScheduled = true;
+        foreach ($responses as [$exit, $output, $failure]) {
+            $process = $this->createMock(Process::class);
+            if ($failure !== null) {
+                $process->expects($this->once())->method('run')->willThrowException($failure);
+            } else {
+                $process->expects($this->once())->method('run')->willReturn($exit);
+            }
+            $process->method('isSuccessful')->willReturn($exit === 0);
+            $process->method('getOutput')->willReturn($output);
+            $launcher->processes[] = $process;
+        }
+
+        return $launcher;
+    }
+
+    public function test_scheduled_service_uses_safe_argv_uid_environment_and_one_unit(): void
+    {
+        $run = $this->runRecord(['trigger' => 'scheduled']);
+        $launcher = $this->scheduledLauncher([[0, '', null], [0, '', null], [0, "7654\n", null]]);
+        $result = $launcher->launch($run->id);
+        $this->assertSame(7654, $result['process_id']);
+        $this->assertSame(0, $launcher->calls);
+        $this->assertSame(1, $launcher->scheduledCalls);
+        $unit = 'video-health-run-'.$run->id.'.service';
+        $log = $result['log_path'];
+        $this->assertSame([
+            '/test/bin/systemd-run', '--user', '--quiet', '--unit='.$unit,
+            '--service-type=exec', '--expand-environment=no', '--property=Restart=no', '--property=UMask=0077',
+            '--property=StandardOutput=append:'.$log,
+            '--property=StandardError=append:'.$log,
+            '--working-directory='.base_path(), '--', PHP_BINARY, base_path('artisan'),
+            'video-health:run', (string) $run->id,
+        ], $launcher->plans[1][0]);
+        foreach ($launcher->plans as [$argv, $cwd, $environment]) {
+            $this->assertSame(base_path(), $cwd);
+            $this->assertSame(['XDG_RUNTIME_DIR' => '/run/user/2345',
+                'DBUS_SESSION_BUS_ADDRESS' => 'unix:path=/run/user/2345/bus'], $environment);
+        }
+        $this->assertSame(['/test/bin/systemctl', '--user', 'show', $unit, '--property=MainPID', '--value'], $launcher->plans[2][0]);
+        try {
+            $launcher->launch($run->id);
+            $this->fail('Duplicate scheduled launch must be refused.');
+        } catch (VideoHealthLaunchException $exception) {
+            $this->assertLaunchOutcome($exception, VideoHealthLaunchException::RECONCILIATION_REQUIRED);
+        }
+        $this->assertCount(3, $launcher->plans);
+        $this->assertSame('queued', $run->fresh()->status);
+    }
+
+    #[DataProvider('scheduledPreflightFailures')]
+    public function test_scheduled_preflight_failure_cleans_reservation_without_creation(string $failure): void
+    {
+        $run = $this->runRecord(['trigger' => 'scheduled']);
+        $launcher = $this->scheduledLauncher([]);
+        $launcher->supported = $failure !== 'platform';
+        $launcher->uid = $failure === 'uid' ? null : 2345;
+        $launcher->bus = $failure !== 'bus';
+        $launcher->executables = $failure !== 'executable';
+        try {
+            $launcher->launch($run->id);
+            $this->fail('Expected preflight refusal.');
+        } catch (VideoHealthLaunchException $exception) {
+            $this->assertLaunchOutcome($exception, VideoHealthLaunchException::CONFIRMED_NOT_LAUNCHED);
+        }
+        $this->assertSame('', file_get_contents($this->root.'/run-'.$run->id.'.lock'));
+        $this->assertSame([], $launcher->plans);
+    }
+
+    public static function scheduledPreflightFailures(): array
+    {
+        return [['platform'], ['uid'], ['bus'], ['executable']];
+    }
+
+    public function test_scheduled_confirmed_client_start_failure_is_retryable(): void
+    {
+        $run = $this->runRecord(['trigger' => 'scheduled']);
+        $launcher = $this->scheduledLauncher([[0, '', null], [1, '',
+            new ProcessStartFailedException(new Process(['missing']), 'No client created')]]);
+        try {
+            $launcher->launch($run->id);
+            $this->fail('Expected client start failure.');
+        } catch (VideoHealthLaunchException $exception) {
+            $this->assertLaunchOutcome($exception, VideoHealthLaunchException::CONFIRMED_NOT_LAUNCHED);
+        }
+        $this->assertSame('', file_get_contents($this->root.'/run-'.$run->id.'.lock'));
+    }
+
+    #[DataProvider('scheduledUncertainResults')]
+    public function test_scheduled_ambiguous_creation_or_query_preserves_reservation(array $responses): void
+    {
+        $run = $this->runRecord(['trigger' => 'scheduled']);
+        $launcher = $this->scheduledLauncher($responses);
+        try {
+            $launcher->launch($run->id);
+            $this->fail('Expected uncertain outcome.');
+        } catch (VideoHealthLaunchException $exception) {
+            $this->assertLaunchOutcome($exception, VideoHealthLaunchException::RECONCILIATION_REQUIRED);
+        }
+        $this->assertSame("launch-attempt\n", file_get_contents($this->root.'/run-'.$run->id.'.lock'));
+        $plans = count($launcher->plans);
+        try {
+            $launcher->launch($run->id);
+            $this->fail('Ambiguous launch cannot retry.');
+        } catch (VideoHealthLaunchException $exception) {
+            $this->assertTrue($exception->requiresReconciliation());
+        }
+        $this->assertCount($plans, $launcher->plans);
+    }
+
+    public static function scheduledUncertainResults(): array
+    {
+        return [
+            [[[0, '', null], [1, '', null]]],
+            [[[0, '', null], [1, '', new RuntimeException('Client timeout')]]],
+            [[[0, '', null], [0, '', null], [1, '', null]]],
+            [[[0, '', null], [0, '', null], [1, '', new RuntimeException('Query timeout')]]],
+            [[[0, '', null], [0, '', null], [0, 'invalid', null]]],
+        ];
+    }
+
+    public function test_scheduled_acknowledged_service_allows_no_observable_pid(): void
+    {
+        $run = $this->runRecord(['trigger' => 'scheduled']);
+        $launcher = $this->scheduledLauncher([[0, '', null], [0, '', null], [0, '0', null]]);
+        $result = $launcher->launch($run->id);
+        $this->assertTrue($result['launched']);
+        $this->assertNull($result['process_id']);
+        $this->assertNull($run->fresh()->process_id);
+        $this->assertNotNull($run->fresh()->log_path);
+    }
+
+    public function test_manual_backend_does_not_use_user_systemd(): void
+    {
+        $run = $this->runRecord();
+        $launcher = $this->scheduledLauncher([]);
+        $this->assertTrue($launcher->launch($run->id)['launched']);
+        $this->assertSame(1, $launcher->calls);
+        $this->assertSame(0, $launcher->scheduledCalls);
+        $this->assertSame([], $launcher->plans);
+    }
+
+    public function test_scheduled_executable_and_paths_remain_literal_argv_values(): void
+    {
+        $binary = '/opt/portable PHP %n/php;literal$(value)';
+        config(['video-health.launcher.php_binary' => $binary]);
+        $run = $this->runRecord(['trigger' => 'scheduled']);
+        $launcher = $this->scheduledLauncher([[0, '', null], [0, '', null], [0, '0', null]]);
+        $launcher->launch($run->id);
+        $this->assertSame($binary, $launcher->plans[0][0][0]);
+        $this->assertSame([$binary, base_path('artisan'), 'video-health:run', (string) $run->id], array_slice($launcher->plans[1][0], -4));
+        $process = $launcher->processPlan([$binary, 'literal %n $VALUE'], '/tmp/private path %n', ['XDG_RUNTIME_DIR' => '/run/user/2345']);
+        $this->assertSame(10.0, $process->getTimeout());
+        $this->assertSame('/tmp/private path %n', $process->getWorkingDirectory());
+        $this->assertSame('/run/user/2345', $process->getEnv()['XDG_RUNTIME_DIR']);
+    }
+
+    public function test_scheduled_non_cli_preflight_never_creates_unit(): void
+    {
+        $run = $this->runRecord(['trigger' => 'scheduled']);
+        $launcher = $this->scheduledLauncher([[1, '', null]]);
+        try {
+            $launcher->launch($run->id);
+            $this->fail('Expected non-CLI refusal.');
+        } catch (VideoHealthLaunchException $exception) {
+            $this->assertTrue($exception->confirmedNotLaunched());
+        }
+        $this->assertCount(1, $launcher->plans);
+        $this->assertSame('', file_get_contents($this->root.'/run-'.$run->id.'.lock'));
+    }
 }
 
 class LauncherSpy extends VideoHealthLauncher
 {
+    public bool $realScheduled = false;
+    public int $scheduledCalls = 0;
     public int $calls = 0;
     public array $arguments = [];
     public string $cwd = '';
@@ -574,6 +750,15 @@ class LauncherSpy extends VideoHealthLauncher
         }
 
         return $this->result;
+    }
+
+    protected function spawnScheduled(array $arguments, string $workingDirectory, string $logPath): array
+    {
+        $this->scheduledCalls++;
+
+        return $this->realScheduled
+            ? parent::spawnScheduled($arguments, $workingDirectory, $logPath)
+            : $this->spawn($arguments, $workingDirectory, $logPath);
     }
 
     public function plan(array $arguments, string $workingDirectory, string $logPath): Process
@@ -637,6 +822,51 @@ class LauncherSpy extends VideoHealthLauncher
         }
 
         return parent::truncateReservation($guard);
+    }
+}
+
+class ScheduledLauncherSpy extends LauncherSpy
+{
+    public bool $supported = true;
+    public ?int $uid = 2345;
+    public bool $bus = true;
+    public bool $executables = true;
+    public array $processes = [];
+    public array $plans = [];
+
+    public function processPlan(array $arguments, string $directory, array $environment): Process
+    {
+        return parent::userManagerProcess($arguments, $directory, $environment);
+    }
+
+    protected function supportsDetachedLaunch(): bool
+    {
+        return $this->supported;
+    }
+
+    protected function effectiveUid(): ?int
+    {
+        return $this->uid;
+    }
+
+    protected function userBusAvailable(string $runtime): bool
+    {
+        return $this->bus;
+    }
+
+    protected function systemExecutable(string $name): ?string
+    {
+        return $this->executables ? '/test/bin/'.$name : null;
+    }
+
+    protected function userManagerProcess(array $arguments, string $directory, array $environment): Process
+    {
+        $this->plans[] = [$arguments, $directory, $environment];
+        if ($this->processes === []) {
+            throw new RuntimeException('Unexpected process request; no real process is allowed.');
+        }
+
+        return array_shift($this->processes);
     }
 }
 

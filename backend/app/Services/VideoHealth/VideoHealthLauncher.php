@@ -6,6 +6,7 @@ use App\Models\VideoHealthRun;
 use DomainException;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessStartFailedException;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use Throwable;
 
@@ -64,7 +65,9 @@ class VideoHealthLauncher
                 throw new VideoHealthLaunchException(VideoHealthLaunchException::CONFIRMED_NOT_LAUNCHED, 'Cannot persist launch reservation; no child was launched.', $reservationFailure);
             }
             try {
-                $result = $this->spawn($arguments, base_path(), $logPath);
+                $result = $run->trigger === VideoHealthRun::TRIGGER_SCHEDULED
+                    ? $this->spawnScheduled($arguments, base_path(), $logPath)
+                    : $this->spawn($arguments, base_path(), $logPath);
             } catch (Throwable $exception) {
                 throw new VideoHealthLaunchException(VideoHealthLaunchException::RECONCILIATION_REQUIRED, 'Launch outcome is uncertain; a child may have started. Review the run and private log before retrying.', $exception);
             }
@@ -196,6 +199,91 @@ class VideoHealthLauncher
     protected function supportsDetachedLaunch(): bool
     {
         return PHP_OS_FAMILY === 'Linux';
+    }
+
+    protected function effectiveUid(): ?int
+    {
+        return function_exists('posix_geteuid') ? posix_geteuid() : null;
+    }
+
+    protected function userBusAvailable(string $runtime): bool
+    {
+        return is_dir($runtime) && @filetype($runtime.'/bus') === 'socket';
+    }
+
+    protected function systemExecutable(string $name): ?string
+    {
+        return (new ExecutableFinder)->find($name);
+    }
+
+    protected function userManagerProcess(array $arguments, string $directory, array $environment): Process
+    {
+        $process = new Process($arguments, $directory, $environment);
+        $process->setTimeout(10);
+
+        return $process;
+    }
+
+    /** @return array{started: bool, pid: ?int} */
+    protected function spawnScheduled(array $arguments, string $workingDirectory, string $logPath): array
+    {
+        $uid = $this->effectiveUid();
+        if (!$this->supportsDetachedLaunch() || $uid === null || $uid < 0) {
+            return ['started' => false, 'pid' => null];
+        }
+        $runtime = '/run/user/'.$uid;
+        $systemd = $this->systemExecutable('systemd-run');
+        $systemctl = $this->systemExecutable('systemctl');
+        if (!$this->userBusAvailable($runtime) || $systemd === null || $systemctl === null) {
+            return ['started' => false, 'pid' => null];
+        }
+        $environment = [
+            'XDG_RUNTIME_DIR' => $runtime,
+            'DBUS_SESSION_BUS_ADDRESS' => 'unix:path='.$runtime.'/bus',
+        ];
+        // Verify CLI before any transient-unit creation. This is argv, not shell.
+        try {
+            $preflight = $this->userManagerProcess([$arguments[0], '-r', 'exit(PHP_SAPI === "cli" ? 0 : 1);'], $workingDirectory, $environment);
+            $preflight->run();
+        } catch (Throwable) {
+            return ['started' => false, 'pid' => null];
+        }
+        if (!$preflight->isSuccessful()) {
+            return ['started' => false, 'pid' => null];
+        }
+        $unit = 'video-health-run-'.$arguments[3].'.service';
+        // Transient properties/argv are sent over D-Bus as literal values.
+        // Disable ExecStart environment expansion as well; never invoke a shell.
+        $process = $this->userManagerProcess([
+            $systemd, '--user', '--quiet', '--unit='.$unit,
+            '--service-type=exec', '--expand-environment=no', '--property=Restart=no', '--property=UMask=0077',
+            '--property=StandardOutput=append:'.$logPath,
+            '--property=StandardError=append:'.$logPath,
+            '--working-directory='.$workingDirectory, '--', ...$arguments,
+        ], $workingDirectory, $environment);
+        try {
+            // Wait only for the service start job, never for the audit to finish.
+            $process->run();
+        } catch (ProcessStartFailedException) {
+            return ['started' => false, 'pid' => null];
+        }
+        // A nonzero exit may mean a unit was created but failed its start job.
+        // Neither errors nor timeouts authorize reservation cleanup/retry.
+        if (!$process->isSuccessful()) {
+            throw new RuntimeException('Scheduled service creation could not be confirmed.');
+        }
+        $query = $this->userManagerProcess([
+            $systemctl, '--user', 'show', $unit, '--property=MainPID', '--value',
+        ], $workingDirectory, $environment);
+        $query->run();
+        $value = trim($query->getOutput());
+        if (!$query->isSuccessful() || !preg_match('/\A(?:0|[1-9][0-9]*)\z/', $value)) {
+            throw new RuntimeException('Scheduled service PID query could not be verified.');
+        }
+        $pid = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        // A successfully started, fast-finishing service can already have PID 0.
+        return ['started' => true, 'pid' => $pid === false ? null : $pid];
     }
 
     protected function detachedProcess(array $arguments, string $workingDirectory, string $logPath): Process
