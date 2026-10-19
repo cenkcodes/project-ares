@@ -95,6 +95,11 @@ class VideoHealthRunCoordinator
 
         $data = $validator->validated();
 
+        if ($data['provider'] === VideoHealthRun::PROVIDER_ALL
+            && $data['mode'] === VideoHealthRun::MODE_AUDIT_DEACTIVATE) {
+            return ['run' => null, 'reason' => VideoWorkloadAdmission::INVALID_INPUT];
+        }
+
         return $this->admission->underExclusiveAdmission(function () use ($data, $config, $trigger, $scheduled): array {
             if ($scheduled) {
                 $existing = VideoHealthRun::query()->useWritePdo()->where('schedule_key', $data['schedule_key'])->first();

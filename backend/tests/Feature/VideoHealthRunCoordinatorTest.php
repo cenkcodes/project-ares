@@ -107,12 +107,34 @@ class VideoHealthRunCoordinatorTest extends TestCase
 
     public function test_manual_deactivation_requires_confirmation_and_stores_it_when_supplied(): void
     {
-        $result = $this->manual(['mode' => 'audit-deactivate']);
+        $result = $this->manual([
+            'provider' => 'xvideos',
+            'mode' => 'audit-deactivate',
+        ]);
         $this->assertSame(VideoWorkloadAdmission::INVALID_INPUT, $result['reason']);
         $this->assertSame(0, VideoHealthRun::count());
-        $run = $this->manual(['mode' => 'audit-deactivate', 'confirmed_at' => '2026-10-13 12:00:00'])['run']->refresh();
+
+        $run = $this->manual([
+            'provider' => 'xvideos',
+            'mode' => 'audit-deactivate',
+            'confirmed_at' => '2026-10-13 12:00:00',
+        ])['run']->refresh();
+
         $this->assertSame('audit-deactivate', $run->mode);
         $this->assertSame('2026-10-13 12:00:00', $run->confirmed_at->format('Y-m-d H:i:s'));
+    }
+
+    public function test_manual_all_provider_deactivation_is_always_rejected(): void
+    {
+        $result = $this->manual([
+            'provider' => 'all',
+            'mode' => 'audit-deactivate',
+            'confirmed_at' => '2026-10-13 12:00:00',
+        ]);
+
+        $this->assertSame(VideoWorkloadAdmission::INVALID_INPUT, $result['reason']);
+        $this->assertNull($result['run']);
+        $this->assertSame(0, VideoHealthRun::count());
     }
 
     public function test_scheduled_is_queued_when_idle_and_reuses_schedule_key(): void
@@ -150,7 +172,13 @@ class VideoHealthRunCoordinatorTest extends TestCase
     public function test_scheduled_deactivation_is_disabled_by_default(): void
     {
         $this->assertFalse(config('video-health.rollout.automatic_deactivation_enabled'));
-        $result = $this->scheduled(['mode' => 'audit-deactivate']);
+
+        $result = $this->scheduled([
+            'provider' => 'xvideos',
+            'mode' => 'audit-deactivate',
+            'schedule_key' => 'xvideos:2026-10-13',
+        ]);
+
         $this->assertSame(VideoWorkloadAdmission::AUTOMATIC_DEACTIVATION_DISABLED, $result['reason']);
         $this->assertNull($result['run']);
         $this->assertSame(0, VideoHealthRun::count());
@@ -159,9 +187,29 @@ class VideoHealthRunCoordinatorTest extends TestCase
     public function test_enabled_scheduled_deactivation_does_not_need_human_confirmation(): void
     {
         config(['video-health.rollout.automatic_deactivation_enabled' => true]);
-        $run = $this->scheduled(['mode' => 'audit-deactivate'])['run']->refresh();
+
+        $run = $this->scheduled([
+            'provider' => 'xvideos',
+            'mode' => 'audit-deactivate',
+            'schedule_key' => 'xvideos:2026-10-13',
+        ])['run']->refresh();
+
         $this->assertSame('queued', $run->status);
         $this->assertNull($run->confirmed_at);
+    }
+
+    public function test_scheduled_all_provider_deactivation_is_rejected_even_when_enabled(): void
+    {
+        config(['video-health.rollout.automatic_deactivation_enabled' => true]);
+
+        $result = $this->scheduled([
+            'provider' => 'all',
+            'mode' => 'audit-deactivate',
+        ]);
+
+        $this->assertSame(VideoWorkloadAdmission::INVALID_INPUT, $result['reason']);
+        $this->assertNull($result['run']);
+        $this->assertSame(0, VideoHealthRun::count());
     }
 
     #[DataProvider('invalidInputs')]
