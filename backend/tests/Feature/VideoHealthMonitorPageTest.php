@@ -94,10 +94,17 @@ class VideoHealthMonitorPageTest extends TestCase
     #[DataProvider('modes')]
     public function test_run_now_calls_manual_coordinator_then_exact_launcher_once(string $mode): void
     {
-        $run = $this->runRecord(['mode' => $mode, 'confirmed_at' => $mode === 'audit-deactivate' ? now() : null]);
-        $this->coordinator->shouldReceive('admitManual')->once()->with(Mockery::on(function (array $input) use ($mode): bool {
+        $provider = $mode === 'audit-deactivate' ? 'xvideos' : 'all';
+
+        $run = $this->runRecord([
+            'provider' => $provider,
+            'mode' => $mode,
+            'confirmed_at' => $mode === 'audit-deactivate' ? now() : null,
+        ]);
+
+        $this->coordinator->shouldReceive('admitManual')->once()->with(Mockery::on(function (array $input) use ($mode, $provider): bool {
             $this->assertSame(['provider', 'mode', 'created_by', 'confirmed_at'], array_keys($input));
-            $this->assertSame('all', $input['provider']);
+            $this->assertSame($provider, $input['provider']);
             $this->assertSame($mode, $input['mode']);
             $this->assertSame($this->admin->id, $input['created_by']);
             if ($mode === 'audit-deactivate') {
@@ -108,12 +115,21 @@ class VideoHealthMonitorPageTest extends TestCase
 
             return true;
         }))->andReturn(['run' => $run, 'reason' => null]);
-        $this->launcher->shouldReceive('launch')->once()->with($run->id)->andReturn(['launched' => true, 'process_id' => null, 'log_path' => 'private']);
+
+        $this->launcher->shouldReceive('launch')->once()->with($run->id)
+            ->andReturn(['launched' => true, 'process_id' => null, 'log_path' => 'private']);
+
         Livewire::test(VideoHealthMonitor::class)
-            ->fillForm(['mode' => $mode, 'confirmation' => $mode === 'audit-deactivate' ? 'confirmed' : null])
+            ->fillForm([
+                'provider' => $provider,
+                'mode' => $mode,
+                'confirmation' => $mode === 'audit-deactivate' ? 'confirmed' : null,
+            ])
             ->call('runNow')->assertHasNoFormErrors()->assertNotified('Detached health process launched')
             ->assertSet('data.confirmation', null);
+
         $this->assertSame(1, VideoHealthRun::count());
+        $this->assertSame($provider, $run->fresh()->provider);
         $this->assertSame('queued', $run->fresh()->status);
     }
 
@@ -190,41 +206,37 @@ class VideoHealthMonitorPageTest extends TestCase
         return [['eporner', 'all'], ['eporner', 'xvideos'], ['all', 'redtube'], ['xnxx', 'redtube']];
     }
 
-    public function test_renewed_confirmation_admits_current_all_scope_and_launches_exact_new_run(): void
+    public function test_renewed_confirmation_for_all_scope_is_refused_without_launch(): void
     {
-        $renewed = false;
-        $admittedId = null;
         $this->coordinator->shouldReceive('admitManual')->once()
-            ->andReturnUsing(function (array $input) use (&$renewed, &$admittedId): array {
-                $this->assertTrue($renewed, 'Admission must not occur before renewed confirmation.');
+            ->with(Mockery::on(function (array $input): bool {
                 $this->assertSame('all', $input['provider']);
                 $this->assertSame('audit-deactivate', $input['mode']);
                 $this->assertNotNull($input['confirmed_at']);
-                $this->assertSame(now()->toIso8601String(), $input['confirmed_at']);
-                $run = $this->runRecord($input);
-                $admittedId = $run->id;
-
-                return ['run' => $run, 'reason' => null];
-            });
-        $this->launcher->shouldReceive('launch')->once()
-            ->with(Mockery::on(function (int $runId) use (&$admittedId): bool {
-                $this->assertNotNull($admittedId);
-                $this->assertSame($admittedId, $runId);
 
                 return true;
-            }))->andReturn(['launched' => true]);
-        $this->freezeTime();
-        $page = Livewire::test(VideoHealthMonitor::class)->set('data.provider', 'eporner')
-            ->set('data.mode', 'audit-deactivate')->set('data.confirmation', 'confirmed')
-            ->set('data.provider', 'all')->assertSet('data.confirmation', null)
-            ->call('runNow')->assertHasFormErrors(['confirmation']);
+            }))
+            ->andReturn(['run' => null, 'reason' => VideoWorkloadAdmission::INVALID_INPUT]);
+
+        $this->launcher->shouldNotReceive('launch');
+
+        $page = Livewire::test(VideoHealthMonitor::class)
+            ->set('data.provider', 'eporner')
+            ->set('data.mode', 'audit-deactivate')
+            ->set('data.confirmation', 'confirmed')
+            ->set('data.provider', 'all')
+            ->assertSet('data.confirmation', null)
+            ->call('runNow')
+            ->assertHasFormErrors(['confirmation']);
+
         $this->assertSame(0, VideoHealthRun::count());
-        $renewed = true;
-        $page->set('data.confirmation', 'confirmed')->call('runNow')->assertHasNoFormErrors()
-            ->assertNotified('Detached health process launched')->assertSet('data.confirmation', null);
-        $this->assertSame(1, VideoHealthRun::count());
-        $this->assertSame('all', VideoHealthRun::first()->provider);
-        $this->assertNotNull(VideoHealthRun::first()->confirmed_at);
+
+        $page->set('data.confirmation', 'confirmed')
+            ->call('runNow')
+            ->assertHasNoFormErrors()
+            ->assertNotified('Health run not admitted');
+
+        $this->assertSame(0, VideoHealthRun::count());
     }
 
     #[DataProvider('invalidSelections')]
