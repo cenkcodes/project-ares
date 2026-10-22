@@ -6,12 +6,11 @@ return [
     | Performer Search Exposure
     |--------------------------------------------------------------------------
     |
-    | Keep disabled until the first performer landing page has passed local,
-    | production and SEO smoke validation. This is intentionally independent
-    | from Topic and Guide exposure.
+    | Search exposure is enabled only for explicitly configured performer
+    | pages that also pass the per-page publication and inventory gates.
     |
     */
-    'index_exposure_enabled' => false,
+    'index_exposure_enabled' => true,
 
     /*
     |--------------------------------------------------------------------------
