@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\LegalContactController;
 use App\Http\Controllers\MonetizationRuntimeController;
+use App\Http\Controllers\PerformerController;
 use App\Http\Controllers\PrivacyConsentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SeoController;
@@ -39,6 +40,10 @@ Route::get('/guides/{slug}', [GuideController::class, 'show'])
 Route::get('/topics/{slug}', [TopicController::class, 'show'])
     ->middleware(RequireAdultConsent::class)
     ->name('topics.show');
+
+Route::get('/performers/{slug}', [PerformerController::class, 'show'])
+    ->middleware(RequireAdultConsent::class)
+    ->name('performers.show');
 
 Route::redirect('/categories/latin', '/categories/latina', 301);
 
