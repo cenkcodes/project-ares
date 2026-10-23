@@ -203,6 +203,17 @@ def normalize_source_term(
         value
     )
 
+    value = value.translate(
+        str.maketrans(
+            {
+                "\u2018": "'",
+                "\u2019": "'",
+                "\u02bc": "'",
+                "\uff07": "'",
+            }
+        )
+    )
+
     value = unicodedata.normalize(
         "NFKD",
         value,
