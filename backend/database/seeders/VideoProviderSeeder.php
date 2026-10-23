@@ -66,5 +66,52 @@ class VideoProviderSeeder extends Seeder
                     . 'and low-frequency popunder formats may be used.',
             ],
         );
+
+        VideoProvider::updateOrCreate(
+            [
+                'slug' => 'porntrex',
+            ],
+            [
+                'name' => 'PornTrex',
+
+                'description' =>
+                    'External video provider integrated through the shared '
+                    . 'Xurvexa video import pipeline.',
+
+                'is_active' => true,
+
+                /*
+                 * Provider registration and import are separate
+                 * from monetization policy.
+                 */
+                'monetization_enabled' => false,
+
+                /*
+                 * External embed provider may display advertising
+                 * inside its own player.
+                 */
+                'has_own_ads' => true,
+
+                /*
+                 * Keep Xurvexa-controlled player ads disabled
+                 * until PornTrex playback QA is completed.
+                 */
+                'allow_xurvexa_preroll' => false,
+                'allow_xurvexa_midroll' => false,
+
+                /*
+                 * Conservative initial PornTrex pilot.
+                 */
+                'allow_popunder' => false,
+                'allow_native_ads' => false,
+                'allow_banner_ads' => false,
+                'allow_interstitial' => false,
+
+                'monetization_notes' =>
+                    'PornTrex is enabled for controlled video import and '
+                    . 'source diversity. Site-controlled monetization remains '
+                    . 'disabled pending separate playback and advertising QA.',
+            ],
+        );
     }
 }

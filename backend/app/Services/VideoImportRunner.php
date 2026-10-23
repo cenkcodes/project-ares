@@ -16,6 +16,7 @@ class VideoImportRunner
         'eporner' => '/var/www/project-ares/ops/video-import/eporner-batch.php',
         'xnxx' => '/var/www/project-ares/ops/video-import/xnxx-batch.php',
         'redtube' => '/var/www/project-ares/ops/video-import/redtube-batch.php',
+        'porntrex' => '/var/www/project-ares/ops/video-import/porntrex-batch.php',
     ];
 
     private const PROVIDER_BATCH_SHA256 = [
@@ -23,6 +24,7 @@ class VideoImportRunner
         'eporner' => 'db2eafb4772140904ae40767b69a46da3af5c368203b1e9c1fe3a22dc51037cf',
         'xnxx' => '5c9d2caf1626aa014ad4d2bf4db976154727489adc9a5e30e7bdbf58df2b6a2a',
         'redtube' => 'ace4003770350d9591d520654d76e2be83c31bd58bed871433ae5fd1979ad90b',
+        'porntrex' => 'd7d44930202757b6b62c2227abc911f73a477548f58a333f661d4dcb6de08154',
     ];
 
     public static function supportedSources(): array
@@ -175,7 +177,7 @@ class VideoImportRunner
 
             if ($startPage === 0) {
                 $startPage = match ($job->source) {
-                    'xvideos' => 0,
+                    'xvideos', 'porntrex' => 0,
                     'xnxx', 'redtube', 'eporner' => 1,
                     default => 0,
                 };
