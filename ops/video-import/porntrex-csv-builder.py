@@ -208,8 +208,12 @@ def normalize_source_term(
             {
                 "\u2018": "'",
                 "\u2019": "'",
-                "\u02bc": "'",
-                "\uff07": "'",
+                "\u02bc": None,
+                "\uff07": None,
+                "\u00b4": None,
+                "\u02bb": None,
+                "\u02b9": None,
+                "\u2032": None,
             }
         )
     )
