@@ -757,6 +757,46 @@
     @endif
 
 
+    @if(
+        $activeCategory &&
+        $relatedTopics->isNotEmpty()
+    )
+
+        <section
+            class="related-categories category-topics"
+            aria-labelledby="category-topics-title"
+        >
+
+            <h2
+                id="category-topics-title"
+                class="related-categories-title"
+            >
+                Explore Topics
+            </h2>
+
+            <div class="related-categories-links">
+
+                @foreach($relatedTopics as $relatedTopic)
+
+                    <a
+                        class="related-category-link category-topic-link"
+                        href="{{ route(
+                            'topics.show',
+                            ['slug' => $relatedTopic->slug]
+                        ) }}"
+                    >
+                        {{ $relatedTopic->title }}
+                    </a>
+
+                @endforeach
+
+            </div>
+
+        </section>
+
+    @endif
+
+
     @if($activeCategory)
 
         <section

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\CategoryRelation;
+use App\Models\SeoTopic;
 use App\Models\Video;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class VideoController extends Controller
             'categories' => $categories,
             'activeCategory' => null,
             'relatedCategories' => collect(),
+            'relatedTopics' => collect(),
             'search' => $request->string('q')->trim()->toString(),
             'sort' => $request->string('sort')->toString() ?: 'latest',
         ]);
@@ -55,11 +57,17 @@ class VideoController extends Controller
                 $category
             );
 
+        $relatedTopics =
+            $this->getRelatedTopics(
+                $category
+            );
+
         return view('videos.index', [
             'videos' => $videos,
             'categories' => $categories,
             'activeCategory' => $category,
             'relatedCategories' => $relatedCategories,
+            'relatedTopics' => $relatedTopics,
             'search' => $request->string('q')->trim()->toString(),
             'sort' => $request->string('sort')->toString() ?: 'latest',
         ]);
@@ -305,6 +313,44 @@ class VideoController extends Controller
             )
             ->filter()
             ->values();
+    }
+
+    /**
+     * Expose only the currently approved Topic cohort from category hubs.
+     *
+     * The global Topic exposure switch remains the emergency kill switch.
+     * Publication approval and technical eligibility are enforced centrally
+     * by SeoTopic::searchExposureEligible().
+     */
+    private function getRelatedTopics(
+        Category $category
+    ): Collection {
+        if (
+            config(
+                'seo.topic_index_exposure_enabled',
+                false
+            ) !== true
+        ) {
+            return collect();
+        }
+
+        return SeoTopic::query()
+            ->searchExposureEligible()
+            ->where(
+                'primary_category_id',
+                $category->id
+            )
+            ->orderByDesc(
+                'semantic_score'
+            )
+            ->orderByDesc(
+                'support_video_count'
+            )
+            ->orderBy(
+                'title'
+            )
+            ->limit(6)
+            ->get();
     }
 
     private function getCanonicalCategoryIdsForVideo(
