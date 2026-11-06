@@ -14,6 +14,14 @@ use Illuminate\Support\Str;
 
 class VideoController extends Controller
 {
+    private const WATCH_TOPIC_EXPERIMENT_SLUGS = [
+        'amateur-homemade',
+        'handjob-group-sex',
+        'hardcore-big-boobs',
+        'lesbian-fingering',
+        'massage-oil',
+    ];
+
     public function index(Request $request)
     {
         $videos = $this->buildVideoQuery($request)
@@ -94,6 +102,11 @@ class VideoController extends Controller
                 $taxonomyCategoryIds
             );
 
+        $watchTopics =
+            $this->getWatchTopics(
+                $video
+            );
+
         $relatedVideos =
             $this->getRelatedVideos(
                 $video,
@@ -141,6 +154,7 @@ class VideoController extends Controller
             'video' => $video,
             'relatedVideos' => $relatedVideos,
             'topicCategories' => $topicCategories,
+            'watchTopics' => $watchTopics,
             'publishedSeoDescription' => $publishedSeoDescription,
             'pageDescription' => $pageDescription,
             'robotsContent' => $robotsContent,
@@ -351,6 +365,56 @@ class VideoController extends Controller
             )
             ->limit(6)
             ->get();
+    }
+
+    /**
+     * Controlled watch-page Topic exposure experiment.
+     *
+     * Only exact video/topic memberships are eligible, and the shared
+     * searchExposureEligible() scope remains the publication quality gate.
+     * The slug allowlist is the treatment cohort for the current SEO test.
+     */
+    private function getWatchTopics(
+        Video $video
+    ): Collection {
+        if (
+            config(
+                'seo.topic_index_exposure_enabled',
+                false
+            ) !== true
+        ) {
+            return collect();
+        }
+
+        return SeoTopic::query()
+            ->searchExposureEligible()
+            ->join(
+                'seo_topic_videos as topic_video',
+                'topic_video.topic_id',
+                '=',
+                'seo_topics.id'
+            )
+            ->where(
+                'topic_video.video_id',
+                $video->id
+            )
+            ->whereIn(
+                'seo_topics.slug',
+                self::WATCH_TOPIC_EXPERIMENT_SLUGS
+            )
+            ->orderByDesc(
+                'topic_video.relevance_score'
+            )
+            ->orderByDesc(
+                'seo_topics.semantic_score'
+            )
+            ->orderBy(
+                'seo_topics.title'
+            )
+            ->limit(3)
+            ->get([
+                'seo_topics.*',
+            ]);
     }
 
     private function getCanonicalCategoryIdsForVideo(

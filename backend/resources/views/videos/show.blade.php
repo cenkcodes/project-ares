@@ -608,7 +608,12 @@
 
 
 
-        @if($publishedSeoDescription !== null || $topicCategories->isNotEmpty() || $sourceLabel)
+        @if(
+            $publishedSeoDescription !== null
+            || $topicCategories->isNotEmpty()
+            || $watchTopics->isNotEmpty()
+            || $sourceLabel
+        )
         <section
             class="about-section"
             aria-labelledby="about-video-title"
@@ -653,6 +658,45 @@
                                 ) }}"
                             >
                                 {{ $topicCategory->name }}
+                            </a>
+
+                        @endforeach
+
+                    </nav>
+
+                </div>
+
+            @endif
+
+            @if($watchTopics->isNotEmpty())
+
+                <div class="topics">
+
+                    <div class="topics-label">
+                        Explore Topics
+                    </div>
+
+                    <nav
+                        class="topic-list"
+                        aria-label="Related topics"
+                    >
+
+                        @foreach(
+                            $watchTopics
+                            as $watchTopic
+                        )
+
+                            <a
+                                class="topic-chip"
+                                href="{{ route(
+                                    'topics.show',
+                                    [
+                                        'slug' =>
+                                            $watchTopic->slug,
+                                    ]
+                                ) }}"
+                            >
+                                {{ $watchTopic->title }}
                             </a>
 
                         @endforeach
